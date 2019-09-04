@@ -1,17 +1,1 @@
-{
-	"short_name":"Ising",
-	"name":"Ising",
-	"icons":[
-		{
-			"src":"Icon.png",
-			"type":"image/png",
-			"sizes":"192x192"
-		}
-	],
-	"lang":"ja-JP",
-	"description":"Isingは,イジング模型のシミュレータです。",
-	"display":"standalone",
-	"start_url":"?standalone=yes",
-	"background_color":"#CCCCCC",
-	"theme_color":"#B3B348"
-}
+{"short_name":"Ising","name":"Ising","icons":[{"src":"Icon.png","type":"image/png","sizes":"192x192"}],"lang":"ja-JP","description":"Isingは,イジング模型のシミュレータです。","display":"standalone","start_url":"?standalone=yes","background_color":"#FFFF99","theme_color":"#666600"}
