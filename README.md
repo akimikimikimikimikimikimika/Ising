@@ -79,6 +79,9 @@ Isingは,簡素なイジングモデルです。
 - iPhone X 対応。
 - iOSのChromeでは適切に表示されない。
 
+### 更新内容
+- レイアウトが崩れる問題を修正
+
 ### 開く
 - [オンライン版](https://akimikimikimikimikimikimika.github.io/Ising/Ising.html "Isingオンライン版")
 - [オフライン版](https://akimikimikimikimikimikimika.github.io/Ising/offline.html "Isingオフライン版")
