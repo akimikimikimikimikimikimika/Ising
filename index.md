@@ -81,8 +81,7 @@ Isingは,簡素なイジングモデルです。
 - iOSのChromeでは適切に表示されない。
 
 ### 更新内容
-- 標準のレンダラーをWebGLやWebMetalに変更
-- 1辺の長さを150ピクセルまで拡大させることに対応
+- WebGLの描画方法を多少改良
 
 ### 開く
 - [オンライン版](https://akimikimikimikimikimikimika.github.io/Ising/Ising.html "Isingオンライン版")
