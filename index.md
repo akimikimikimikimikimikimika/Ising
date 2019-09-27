@@ -50,8 +50,12 @@ Isingは,簡素なイジングモデルです。
 - **Canvas 2D**  
 	`<canvas>` の 2D コンテクストで正方形を並べて描画する。
 
+- **CSS Paint**  
+	CSSで指定したデータに基づいてJavaScriptのWorkerがバックグラウンドで正方形を並べて描画する。  
+	実験的な機能であるため,対応していないブラウザが多い。
+
 - **Background Image**  
-	`<div>` の背景画像として,単色の画像を数多く並べることで描画する。
+	`<div>` の背景画像としてグラデーションも用いて描画する。
 
 - **DIV Grid**  
 	`<div>` をグリッドレイアウトで配置させ,各々の背景を着色させて描画する。
@@ -78,10 +82,10 @@ Isingは,簡素なイジングモデルです。
 - Internet Explorerでは利用できない。
 - iOSデバイスでは,ホーム画面にアイコンを追加すると,スタンドアロンで開く。
 - iPhone X 対応。
-- iOSのChromeでは適切に表示されない。
 
 ### 更新内容
-- WebGLの描画方法を多少改良
+- CSS Painting API (CSS Paint API) を導入
+- 一部のレンダラーで表示できなくなっていた問題を修正
 
 ### 開く
 - [オンライン版](https://akimikimikimikimikimikimika.github.io/Ising/Ising.html "Isingオンライン版")
