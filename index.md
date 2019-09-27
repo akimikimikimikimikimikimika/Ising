@@ -87,6 +87,9 @@ Isingは,簡素なイジングモデルです。
 - CSS Painting API (CSS Paint API) を導入
 - 一部のレンダラーで表示できなくなっていた問題を修正
 
+### 注意事項
+最大で 150×150 のドットの描画が可能なようにしているが,一部のレンダラーにおいては高いピクセル数でブラウザのパフォーマンスに影響を及ぼしうるので,特に 100×100 以上を試すのはなるべく控えること。
+
 ### 開く
 - [オンライン版](https://akimikimikimikimikimikimika.github.io/Ising/Ising.html "Isingオンライン版")
 - [オフライン版](https://akimikimikimikimikimikimika.github.io/Ising/offline.html "Isingオフライン版")
