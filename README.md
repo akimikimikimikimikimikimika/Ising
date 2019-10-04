@@ -8,6 +8,10 @@ Isingは,簡素なイジングモデルです。
 それぞれのスピンは,上下左右で隣接する粒子のスピンに応じて変化します。  
 各々のパラメータを変化させた際のスピンの様子を楽しめます。
 
+[Ising を開く](https://akimikimikimikimikimikimika.github.io/Ising/Ising.html "Ising")  
+
+[ソースコード](https://github.com/akimikimikimikimikimikimika/Ising/ "ソースコード")
+
 ### 基本
 
 - ページをロードした直後から,イジング模型は変化していく。
@@ -85,20 +89,12 @@ Isingは,簡素なイジングモデルです。
 - iOSデバイスでは,ホーム画面にアイコンを追加すると,スタンドアロンで開く。
 - iPhone X 対応。
 
+### 注意事項
+最大で 150×150 のドットの描画が可能なようにしているが,一部のレンダラーにおいては高いピクセル数でブラウザのパフォーマンスに影響を及ぼしうるので,特に 100×100 以上を試すのはなるべく控えること。
+
 ### 更新内容
 - CSS Painting API (CSS Paint API) を導入
 - WebGPU が適切に表示されるように改良
 - DIV Absolute を導入
 - 一部のレンダラーで表示できなくなっていた問題を修正
-- ServiceWorker を導入し,オフラインでも表示可能
-
-### 注意事項
-最大で 150×150 のドットの描画が可能なようにしているが,一部のレンダラーにおいては高いピクセル数でブラウザのパフォーマンスに影響を及ぼしうるので,特に 100×100 以上を試すのはなるべく控えること。
-
-### 開く
-- [オンライン版](https://akimikimikimikimikimikimika.github.io/Ising/Ising.html "Isingオンライン版")
-- [オフライン版](https://akimikimikimikimikimikimika.github.io/Ising/offline.html "Isingオフライン版")
-- [ソースコード (GitHub)](https://github.com/akimikimikimikimikimikimika/Ising/ "ソースコード")
-
-オンライン版では,全てのコンテンツを組み込み,常に最新の状態で利用できます。  
-オフライン版では,オンライン版と同じ体験をオフラインでもできるようにします。URLのdataスキームに全てのソースコードを埋め込んでいるので,一部コンテンツに制限があります。
+- Service Worker の導入に伴い,ソースコードをオンライン版に統一。オフライン環境に入るとオンライン時のキャッシュから読み込まれるので,オフラインでも利用可能。
