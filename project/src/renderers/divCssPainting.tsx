@@ -50,7 +50,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
   const src = minifyCss(`
     .view {
-      --binary-data: ${bitsString};
+      --binary-data: "${bitsString}";
       --side: ${side};
     }
   `);

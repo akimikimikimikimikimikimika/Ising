@@ -65,7 +65,7 @@ Error generating stack: `+i.message+`
     }
   `);return c.jsx("style",{children:e})}),tv=w.memo(e=>{const{bits:t,side:n}=e,r=t.map(i=>i?"1":"0").join(""),l=$(`
     .view {
-      --binary-data: ${r};
+      --binary-data: "${r}";
       --side: ${n};
     }
   `);return c.jsx("style",{children:l})}),nv={name:"DIV CSS Painting",willInstall:"paintWorklet"in CSS&&Qe(["background-image","paint(scene)"]),view:bm},rv=e=>c.jsxs("div",{className:"view",children:[c.jsx(lv,{}),c.jsx(iv,{minimized:e.divBackgroundMinimized,side:e.side,overlap:e.overlap,adaptDevicePixelRatio:e.adaptDevicePixelRatio}),c.jsx(ov,{minimized:e.divBackgroundMinimized,side:e.side,bits:e.bits,overlap:e.overlap})]}),lv=w.memo(()=>{const e=$(`
