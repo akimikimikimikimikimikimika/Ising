@@ -1,0 +1,236 @@
+@media (orientation: portrait) {
+	#menu{
+		box-sizing: border-box;
+		position: relative;
+		z-index: 1;
+		width: 100%;
+		padding-left: env(safe-area-inset-left);
+		padding-right: env(safe-area-inset-right);
+		margin-top: var(--container-height);
+		margin-top: calc( var(--container-height) + env(safe-area-inset-top) );
+		margin-bottom: env(safe-area-inset-bottom);
+	}
+	.no-min #menu{
+		margin-top: 0;
+	}
+}
+
+@media (orientation: landscape) {
+	#menu{
+		position: absolute;
+		overflow-x: hidden;
+		overflow-y: scroll;
+		-webkit-overflow-scrolling: touch;
+		left: var(--container-width);
+		left: calc( var(--container-width) + env(safe-area-inset-left) );
+		right: 0;
+		right: env(safe-area-inset-right);
+		top: 0;
+		top: env(safe-area-inset-top);
+		bottom: 0;
+		bottom: env(safe-area-inset-bottom);
+		min-width: 300px;
+		min-height: 350px;
+	}
+	.no-min #menu{
+		left: var(--simple-container-width);
+		left: calc( var(--simple-container-width) + env(safe-area-inset-left) );
+	}
+}
+
+#menu > * {
+	position: relative;
+	height: 40px;
+	font-size: 16px;
+}
+
+#menu > *:not(div) {
+	display: block;
+}
+
+#menu > .range {
+	height: 60px;
+}
+
+.range > * {
+	position: absolute;
+	display: flex;
+	box-sizing: border-box;
+	height: 50%;
+}
+
+.range > .name {
+	top: 0;
+	left: 20px;
+	align-items: flex-end;
+}
+
+.range > .slider {
+	bottom: 0;
+	left: 0;
+	right: 0;
+	justify-content: center;
+}
+
+.range input[type="range"] {
+	width: calc( 100% - 40px );
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+.range > .value {
+	top: 0;
+	right: 20px;
+	align-items: flex-end;
+}
+
+#menu > .selector, #menu > .segmented {
+	display: flex;
+}
+
+.selector > *, .segmented > * {
+	position: relative;
+	height: 100%;
+	display: flex;
+	align-items: center;
+}
+
+#menu > .selector > .name {
+	margin-left: 20px;
+	margin-right: 15px;
+}
+
+#menu > .selector > .value {
+	margin-right: 20px;
+	flex: 1;
+}
+
+.selector > .value > .button {
+	border: solid var(--color) 1px;
+	border-radius: 10px;
+	width: 100%;
+	height: 80%;
+	box-sizing: border-box;
+}
+
+.selector > .value > .button > .label {
+	position: absolute;
+	left: 10px;
+	right: 30px;
+	top: 0;
+	bottom: 0;
+	display: flex;
+	align-items: center;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.selector > .value > .button::after {
+	content: "▼";
+	position: absolute;
+	top: 10%;
+	bottom: 10%;
+	right: 0;
+	width: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.selector select {
+	opacity: 0;
+	z-index: 2;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	font-size: 20px;
+}
+
+#menu > .segmented {
+	height: 60px;
+}
+
+#menu > .segmented > .name {
+	margin-left: 20px;
+	margin-right: 25px;
+}
+
+#menu > .segmented > .value {
+	margin-right: 20px;
+	flex: 1;
+}
+
+.segmented > .value > .segment {
+	border: solid var(--color) 1px;
+	border-radius: 10px;
+	width: 100%;
+	height: 50%;
+	box-sizing: border-box;
+	display: inline flex;
+	flex-direction: row;
+	overflow: hidden;
+}
+
+.segmented > .value > .segment > * {
+	flex: 1;
+	position: relative;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	border-right: solid var(--color) 1px;
+	cursor: pointer;
+}
+.segmented > .value > .segment > .selected {
+	color: var(--bg-color);
+	background-color: var(--color);
+}
+
+.segmented > .value > .segment > *:last-child {
+	border-right: none;
+}
+
+.list, .list * {
+	cursor: pointer;
+}
+
+.list > * {
+	position: absolute;
+	display: flex;
+	box-sizing: border-box;
+	top: 0;
+	bottom: 0;
+	align-items: center;
+}
+
+.list.checked > * {
+	color: #007aff;
+}
+
+.list > .checkbox {
+	left: 0;
+	width: 40px;
+	justify-content: center;
+}
+
+.list.checked > .checkbox:before {
+	content:"✔︎";
+}
+
+.list > .name {
+	padding: 0 10px;
+	left: 40px;
+	right: 0;
+	justify-content: flex-start;
+}
+
+.caption {
+	font-weight: 500;
+	padding: 0 10px;
+	display: block flex;
+	justify-content: flex-start;
+	align-items: center;
+}
