@@ -5,6 +5,7 @@ import {
   renderer as canvasRenderer,
   Context as CanvasContext
 } from "./canvas";
+import { renderer as divCssPaintingRenderer } from "./divCssPainting";
 import { renderer as divBackgroundRenderer } from "./divBackground";
 import { renderer as divClipPathPolygonRenderer } from "./divClipPathPolygon";
 import { renderer as divShadowRenderer } from "./divShadow";
@@ -51,6 +52,7 @@ import { RendererDefs } from "../utils/types";
 export const lists: RendererDefs.Renderer[] = [
   webglRenderer,
   canvasRenderer,
+  divCssPaintingRenderer,
   divBackgroundRenderer,
   divClipPathPolygonRenderer,
   divShadowRenderer,
