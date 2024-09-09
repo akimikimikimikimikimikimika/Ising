@@ -10,7 +10,7 @@ export declare class CSS {
 
 const View: FC<RendererDefs.RendererProps> = (props) => {
   useEffect(() => {
-    CSS.paintWorklet.addModule("paintWorklet.js")
+    CSS.paintWorklet.addModule("assets/paintWorklet.js")
     .catch(() => {
       props.notifyFailure("Failed to add Paint Worklet");
     });

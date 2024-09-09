@@ -1,20 +1,12 @@
 // eslint-disable-next-line @typescript-eslint/no-namespace
-namespace TypeDefs {
-	export declare function registerPaint(name: string, classDef: typeof PaintWorklet): void;
+export declare function registerPaint(name: string, classDef: typeof DrawScene): void;
 
-	export declare class PaintWorklet {
-		static get inputProperties(): string[];
-		paint(context: Context, size: Size, properties: Properties): void;
-	}
-	export type Context = CanvasRenderingContext2D;
-	export type Size = { width: number, height: number };
-	export type Properties = { get: (prop: string) => string; };
-}
-const registerPaint = TypeDefs.registerPaint;
+export type Context = CanvasRenderingContext2D;
+export type Size = { width: number, height: number };
+export type Properties = { get: (prop: string) => string; };
 
 
-
-class DrawScene extends TypeDefs.PaintWorklet {
+class DrawScene {
 
 	static get inputProperties(): string[] {
 		return [
@@ -24,9 +16,9 @@ class DrawScene extends TypeDefs.PaintWorklet {
 	}
 
 	paint(
-		context: TypeDefs.Context,
-		size: TypeDefs.Size,
-		properties: TypeDefs.Properties
+		context: Context,
+		size: Size,
+		properties: Properties
 	) {
 
 		// get values of CSS properties
