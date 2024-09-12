@@ -2,7 +2,7 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { FC, useRef, useEffect, useCallback } from "react";
-import { WebGLMenu as Menu } from "./MenuOptions";
+import { AdaptDPR as Menu } from "./MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { isNil } from "../utils/type_check";
 

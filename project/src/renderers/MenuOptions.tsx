@@ -2,8 +2,6 @@ import { FC } from "react";
 import { Chooser, Range } from "../interfaces/Menu";
 import { RenderOptions } from "./list";
 
-export const WebGLMenu: FC<RenderOptions> = (props) => <AdaptDPR {...props} />;
-
 export const CanvasMenu: FC<RenderOptions> = (props) => ( <>
   <Chooser
     name="Context"
@@ -220,7 +218,7 @@ type AdaptDPRProps = {
   setAdaptDevicePixelRatio: StateSetter<boolean>;
 };
 
-const AdaptDPR: FC<AdaptDPRProps> = (props) => (
+export const AdaptDPR: FC<AdaptDPRProps> = (props) => (
   <Chooser
     name="Device Pixel Ratio"
     mode="segmented"

@@ -14,6 +14,8 @@ export type Parameters = {
   setPixels: StateSetter<number>;
   playing: boolean;
   setPlaying: StateSetter<boolean>;
+  interval: number;
+  setInterval: StateSetter<number>;
   rng: Rng;
   setRng: StateSetter<Rng>;
 };

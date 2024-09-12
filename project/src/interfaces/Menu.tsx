@@ -52,14 +52,28 @@ export const Menu: FC<MenuProps> = (props) => {
         value={props.rng}
         setValue={props.setRng}
       />
-      <Button
-        label="Pause"
-        title={props.playing ? "Click to pause" : "Click to play"}
-        checked={!props.playing}
-        onClick={() => props.setPlaying(!props.playing)}
-      />
+      <Caption title="Controls" />
       <Chooser
-        name="Renderer"
+        name="Updating"
+        mode="segmented"
+        options={[
+          { label: "On", value: true },
+          { label: "Off", value: false }
+        ]}
+        value={props.playing}
+        setValue={props.setPlaying}
+      />
+      <Range
+        name="Minimum Updating Interval"
+        min={100} max={3000} step={100}
+        formatter={value => (
+          value % 1000 === 0 ? `${value/1000}.0 sec` : `${value/1000} sec`
+        )}
+        value={props.interval} setValue={props.setInterval}
+      />
+      <Caption title="Renderer" />
+      <Chooser
+        name="Current Renderer"
         mode="selector"
         options={renderers.filter(
           renderer => renderer.willInstall

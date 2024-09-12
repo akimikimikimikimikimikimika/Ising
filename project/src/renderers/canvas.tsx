@@ -45,7 +45,7 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
     }
   }, [canvasRef.current]);
 
-  // cell size
+  // drawing info
   type Info = {
     cellWidth: number, cellHeight: number,
     side: number

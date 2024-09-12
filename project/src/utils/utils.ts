@@ -241,6 +241,9 @@ export namespace Runner {
     // stop timer immediately
     pause: () => void;
 
+    // time interval (in milliseconds) between calls
+    interval: number;
+
     // users should not use directly below properties or method
     intId: Nullable<number>;
     lastDate: Nullable<Date>;
@@ -261,12 +264,13 @@ export namespace Runner {
         }
         this.intId = null;
       },
+      interval: 1000,
       intId: null, lastDate: null,
       animationFrame: function() {
         const date = new Date();
         if (!isNil(this.lastDate)) {
           const duration = Number(date) - Number(this.lastDate);
-          if (duration>=100) {
+          if (duration >= this.interval) {
             this.lastDate = date;
             if (!isNil(this.action)) this.action();
           }

@@ -45,6 +45,7 @@ const MakeParams = (): Parameters => {
   const [magField, setMagField] = useState<number>(0);
   const [interaction, setInteraction] = useState<number>(1);
   const [pixels, setPixels] = useState<number>(50);
+  const [interval, setInterval] = useState<number>(100);
   const [playing, setPlaying] = useState<boolean>(false);
   const [rng, setRng] = useState<Rng>("crypto");
 
@@ -54,6 +55,7 @@ const MakeParams = (): Parameters => {
     interaction, setInteraction,
     pixels, setPixels,
     playing, setPlaying,
+    interval, setInterval,
     rng, setRng
   };
 };

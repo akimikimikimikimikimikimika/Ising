@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useState } from "react";
 import { renderer as webglRenderer } from "./webgl";
+import { renderer as webgpuRenderer } from "./webgpu";
 import {
   renderer as canvasRenderer,
   Context as CanvasContext
@@ -51,6 +52,7 @@ import { RendererDefs } from "../utils/types";
 
 export const lists: RendererDefs.Renderer[] = [
   webglRenderer,
+  webgpuRenderer,
   canvasRenderer,
   divCssPaintingRenderer,
   divBackgroundRenderer,

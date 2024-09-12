@@ -15,11 +15,16 @@ export const Container: FC<ContainerProps> = (props) => {
   // state changer in the certain interval
   const runner = useRef(Runner.makeRunner());
 
-  // triggered when user press the play/pause button
+  // triggered when the user presses the play/pause button
   useEffect(() => {
     if (props.playing) runner.current.play();
     else runner.current.pause();
   }, [props.playing]);
+
+  // triggered when the user changes the interval
+  useEffect(() => {
+    runner.current.interval = props.interval;
+  }, [props.interval]);
 
   // set action to runner
   runner.current.action = () => {
