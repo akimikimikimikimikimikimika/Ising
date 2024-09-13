@@ -420,7 +420,7 @@ const getCellList = (side: number): Cell[] => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV Sublattices",
-  willInstall: cssSupports(
+  isActive: cssSupports(
     [ "container-type", "size" ],
     [ "border", "solid red calc( 100cqmin / sqrt(2) / 8 )" ],
     [ "background-image", "conic-gradient(from -45deg, red 0deg 180deg, green 180deg 360deg)" ]

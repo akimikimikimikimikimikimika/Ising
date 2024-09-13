@@ -303,7 +303,7 @@ const verticesInCell: Point[] = [
 
 export const renderer : RendererDefs.Renderer = {
   name: "WebGPU",
-  willInstall: !isNil(navigator.gpu),
+  isActive: !isNil(navigator.gpu),
   view: View,
   menu: Menu
 };

@@ -42,23 +42,13 @@ export const Menu: FC<MenuProps> = (props) => {
         min={2} max={150} step={1}
         value={props.pixels} setValue={props.setPixels}
       />
-      <Chooser
-        name="RNG"
-        mode="segmented"
-        options={[
-          { label: "Normal", value: "normal" },
-          { label: "Crypto", value: "crypto" }
-        ]}
-        value={props.rng}
-        setValue={props.setRng}
-      />
       <Caption title="Controls" />
       <Chooser
         name="Updating"
         mode="segmented"
         options={[
-          { label: "On", value: true },
-          { label: "Off", value: false }
+          { value: true , label: "On"  },
+          { value: false, label: "Off" }
         ]}
         value={props.playing}
         setValue={props.setPlaying}
@@ -76,12 +66,34 @@ export const Menu: FC<MenuProps> = (props) => {
         name="Current Renderer"
         mode="selector"
         options={renderers.filter(
-          renderer => renderer.willInstall
+          renderer => renderer.isActive
         ).map( renderer => renderer.name )}
         value={props.current}
         setValue={props.setCurrent}
       />
       {rendererOptions}
+      <Caption title="Misc" />
+      <Chooser
+        name="RNG"
+        mode="segmented"
+        options={[
+          { value: "normal", label: "Normal" },
+          { value: "crypto", label: "Crypto" }
+        ]}
+        value={props.rng}
+        setValue={props.setRng}
+      />
+      <Chooser
+        name="Theme"
+        mode="segmented"
+        options={[
+          { value: "theme-auto" , label: "Auto"  },
+          { value: "theme-light", label: "Light" },
+          { value: "theme-dark" , label: "Dark"  }
+        ]}
+        value={props.theme}
+        setValue={props.setTheme}
+      />
     </div>
   );
 };

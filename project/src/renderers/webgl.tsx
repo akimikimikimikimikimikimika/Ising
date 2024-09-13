@@ -4,6 +4,7 @@
 import { FC, useRef, useEffect, useCallback } from "react";
 import { AdaptDPR as Menu } from "./MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
+import { onColor, offColor } from "../utils/consts";
 import { isNil } from "../utils/type_check";
 
 const View: FC<RendererDefs.RendererProps> = (props) => {
@@ -111,14 +112,13 @@ const shaders: Types.Shader[] = [
     type: prototype?.FRAGMENT_SHADER,
     code: `
       precision mediump float;
-
-      const vec4 off = vec4(0.4,0.4,0.0,1.0);
-      const vec4 diff = vec4(0.6,0.6,0.6,0.0);
+      uniform vec4 onColor;
+      uniform vec4 offColor;
 
       varying float spin;
 
       void main() {
-        gl_FragColor = off + diff * spin;
+        gl_FragColor = spin * onColor + (1.0-spin) * offColor;
       }
     `
   }
@@ -135,6 +135,8 @@ namespace Types {
 
   export type Variables = {
     pixelLoc: WebGLUniformLocation;
+    onColorLoc: WebGLUniformLocation;
+    offColorLoc: WebGLUniformLocation;
     positionsLoc: GLint;
     positionsBuf: WebGLBuffer;
     indicesBuf: WebGLBuffer;
@@ -244,6 +246,12 @@ namespace GLCommands {
       const pixelLoc = context.getUniformLocation(program, "pixel");
       if (isNil(pixelLoc)) throw Error("Failed to get uniform location of pixel");
 
+      const onColorLoc = context.getUniformLocation(program, "onColor");
+      if (isNil(onColorLoc)) throw Error("Failed to get uniform location of onColor");
+
+      const offColorLoc = context.getUniformLocation(program, "offColor");
+      if (isNil(offColorLoc)) throw Error("Failed to get uniform location of offColor");
+
       const positionsLoc = context.getAttribLocation(program, "position");
       if (isNil(positionsLoc)) throw Error("Failed to get attribute location of position");
 
@@ -253,7 +261,7 @@ namespace GLCommands {
       const indicesBuf = context.createBuffer();
       if (isNil(indicesBuf)) throw Error("Failed to create buffer");
 
-      return { pixelLoc, positionsLoc, positionsBuf, indicesBuf };
+      return { pixelLoc, onColorLoc, offColorLoc, positionsLoc, positionsBuf, indicesBuf };
     };
 
   }
@@ -284,7 +292,12 @@ namespace GLCommands {
     ) => {
       clear(context);
 
+      const onColorFloat = new Float32Array([...onColor].map(v => v/255));
+      const offColorFloat = new Float32Array([...offColor].map(v => v/255));
+
       context.uniform1i(vars.pixelLoc, side);
+      context.uniform4fv(vars.onColorLoc, onColorFloat);
+      context.uniform4fv(vars.offColorLoc, offColorFloat);
 
       sendDataToBuffer(
         context,
@@ -458,7 +471,7 @@ const convertData = (bits: Bits, side: number): Nullable<Types.Arrays> => {
 
 export const renderer : RendererDefs.Renderer = {
   name: glMode === "webgl2" ? "WebGL 2" : "WebGL",
-  willInstall: glMode !== "none",
+  isActive: glMode !== "none",
   view: View,
   menu: Menu
 };

@@ -126,7 +126,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV Inline Block",
-  willInstall: cssSupports(
+  isActive: cssSupports(
     [ "display", "inline-block" ],
     [ "width", "calc( 100% / 8 * 1 )" ],
     [ "writing-mode", "horizontal-tb" ],

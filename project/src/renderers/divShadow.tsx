@@ -112,7 +112,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV Shadow",
-  willInstall: cssSupports(
+  isActive: cssSupports(
     [ "container-type", "size" ],
     [ "box-shadow", "10cqmin 10cqmin 0 0 black" ]
   ),

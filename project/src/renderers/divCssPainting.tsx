@@ -60,7 +60,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV CSS Painting",
-  willInstall: (
+  isActive: (
     ("paintWorklet" in CSS) &&
     cssSupports( [ "background-image", "paint(scene)" ] )
   ),

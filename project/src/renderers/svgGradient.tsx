@@ -155,7 +155,7 @@ const Line: FC<LineProps> = memo((props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "SVG Gradient Rect",
-  willInstall: Boolean(window.SVGSVGElement),
+  isActive: Boolean(window.SVGSVGElement),
   view: View,
   menu: Menu
 };

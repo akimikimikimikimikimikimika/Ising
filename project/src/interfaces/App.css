@@ -61,27 +61,27 @@
 
 }
 
-.light {
-	--bg-color:#cccccc;
-	--color:#333333;
+.theme-light {
+	--bg-color: #cccccc;
+	--color: #333333;
 }
 
-.dark {
-	--bg-color:#333333;
-	--color:#cccccc;
+.theme-dark {
+	--bg-color: #333333;
+	--color: #cccccc;
 }
 
 @media screen and (prefers-color-scheme: light) {
-	.pcs{
-		--bg-color:#cccccc;
-		--color:#333333;
+	.theme-auto {
+		--bg-color: #cccccc;
+		--color: #333333;
 	}
 }
 
 @media screen and (prefers-color-scheme: dark) {
-	.pcs{
-		--bg-color:#333333;
-		--color:#cccccc;
+	.theme-auto {
+		--bg-color: #333333;
+		--color: #cccccc;
 	}
 }
 

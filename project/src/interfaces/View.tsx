@@ -1,6 +1,7 @@
-import { FC, useState, useRef, useEffect } from "react";
+import { FC, useState, useRef, useEffect, memo } from "react";
 import { Parameters, Bits, RendererDefs } from "../utils/types";
-import { Calc, Runner } from "../utils/utils";
+import { Calc, Runner, minifyCss } from "../utils/utils";
+import { onColor, offColor } from "../utils/consts";
 import { lists as renderers, RenderOptions } from "../renderers/list";
 import { isNil } from "../utils/type_check";
 import "./View.css";
@@ -56,81 +57,82 @@ export const Container: FC<ContainerProps> = (props) => {
     [props.pixels]
   );
 
-  // failure notifier
-  const [failure, setFailure] = useState<boolean>(false);
-  const [failureMessage, setFailureMessage] = useState<Nullable<string>>(null);
-  const notifyFailure = (message?:string) => {
-    setFailureMessage(message);
-    setFailure(true);
-  };
-
-  // failure message disappeares when the different renderer is selected
-  useEffect(
-    () => {
-      setFailureMessage(null);
-      setFailure(false);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [props.current]
-  );
-
-  const view = (() => {
-    if (failure) {
-      const message =
-        isNil(failureMessage) ?
-        `Failed to render ${props.current}` :
-        `Failed to render ${props.current}: ${failureMessage}`;
-      return <FailureView message={message} />;
-    }
-    else {
-      return renderers.map((renderer, idx) => {
-        const active =
-          renderer.willInstall &&
-          ( renderer.name === props.current );
-        return (
-          <RendererWrapper
-            key={idx}
-            active={active}
-            renderer={renderer}
-            bits={bits}
-            side={props.pixels}
-            windowSize={windowSize}
-            notifyFailure={notifyFailure}
-            {...props}
-          />
-        );
-      });
-    }
-  })();
-
   return (
     <div id="container">
       <div id="frame">
-        {view}
+        {renderers.map((renderer, idx) => {
+          const active =
+            renderer.isActive &&
+            ( renderer.name === props.current );
+
+          return (
+            <RendererWrapper
+              key={idx}
+              active={active}
+              renderer={renderer}
+              bits={bits}
+              side={props.pixels}
+              windowSize={windowSize}
+              {...props}
+            />
+          );
+        })}
+        <ViewStyle />
       </div>
     </div>
   );
 }
 
-
-
 type WrapperProps = {
+  renderer: RendererDefs.Renderer;
+  bits: Bits;
+  side: number;
+  windowSize: RendererDefs.WH;
   active: boolean;
-} & RendererDefs.RendererProps;
+} & RenderOptions;
 
 const RendererWrapper: FC<WrapperProps> = (props) => {
+
+  // failure notifier
+  const [failure, setFailure] = useState<boolean>(false);
+  const [failureMessage, setFailureMessage] = useState<Nullable<string>>(null);
+
+  // failure message disappeares when the different renderer is selected
+  useEffect( () => {
+    if (!props.active) {
+      setFailureMessage(null);
+      setFailure(false);
+    }
+  }, [props.active]);
+
+  const notifyFailure = (message?: string) => {
+    setFailure(true);
+    setFailureMessage(message);
+  };
+
   if (!props.active) return <></>;
 
+  if (failure) {
+    const message =
+      isNil(failureMessage) ?
+      `Failed to render ${props.current}` :
+      `Failed to render ${props.current}: ${failureMessage}`;
+
+    return <div className="view message">{message}</div>;
+  }
+
   const View = props.renderer.view;
-  return <View {...props} />;
+  return <View {...props} notifyFailure={notifyFailure} />;
 };
 
+const ViewStyle: FC = memo(() => {
+  const arrayToRgba = (color: Uint8ClampedArray) => `rgba(${color.slice(0,3)},${color[3]/255})`;
 
-
-type FailureProps = {
-  message: string;
-};
-
-const FailureView: FC<FailureProps> = (props) => (
-  <div className="view message">{props.message}</div>
-);
+  const src = minifyCss(`
+    .view {
+      --on-color: ${arrayToRgba(onColor)};
+      --off-color: ${arrayToRgba(offColor)};
+    }
+  `);
+;  return <style>{src}</style>;
+});

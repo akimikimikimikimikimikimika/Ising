@@ -212,7 +212,7 @@ const WrapperBitmapView: FC<RendererDefs.RendererProps> = (props) => <View {...p
 
 export const renderer : RendererDefs.Renderer = {
   name: "Canvas",
-  willInstall:
+  isActive:
     Boolean(window.CanvasRenderingContext2D) &&
     Boolean(window.ImageBitmapRenderingContext),
   view: WrapperView,

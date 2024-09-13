@@ -202,7 +202,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV Gradient",
-  willInstall: cssSupports(
+  isActive: cssSupports(
     [ "background-size", "calc( 100% / 100 )" ],
     [ "background-image", "linear-gradient(to right, red 0% 50%, green 50% 100%)" ],
     [ "background-image", "linear-gradient(to bottom, red 0% 50%, green 50% 100%)" ],

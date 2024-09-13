@@ -158,7 +158,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV Background",
-  willInstall: cssSupports(
+  isActive: cssSupports(
     [ "background-size", "calc( 100% / 100 )" ],
     [ "background-image", "radial-gradient(red, red)" ]
   ),

@@ -112,7 +112,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "SVG Polygon",
-  willInstall: Boolean(window.SVGSVGElement),
+  isActive: Boolean(window.SVGSVGElement),
   view: View,
   menu: Menu
 };

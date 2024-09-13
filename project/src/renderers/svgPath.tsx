@@ -158,7 +158,7 @@ const makePathCommand = (drawAs: DrawAs, x: number, y: number) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "SVG Path",
-  willInstall: Boolean(window.SVGSVGElement),
+  isActive: Boolean(window.SVGSVGElement),
   view: View,
   menu: Menu
 };

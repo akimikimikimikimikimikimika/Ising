@@ -82,12 +82,13 @@ export const DivFlexMenu: FC<RenderOptions> = (props) => (
   />
 );
 
-export const DivAbsoluteMenu: FC<RenderOptions> = (props) => (
+export const DivAbsoluteMenu: FC<RenderOptions> = (props) => ( <>
   <Minimize
     minimize={props.divAbsoluteMinimized}
     setMinimize={props.setDivAbsoluteMinimized}
   />
-);
+  <UseNthOfType {...props} />
+</> );
 
 export const DivInlineBlockMenu: FC<RenderOptions> = (props) => ( <>
   <Chooser
@@ -228,6 +229,24 @@ export const AdaptDPR: FC<AdaptDPRProps> = (props) => (
     ]}
     value={props.adaptDevicePixelRatio}
     setValue={props.setAdaptDevicePixelRatio}
+  />
+);
+
+type UseNthOfTypeProps = {
+  useNthOfType: boolean;
+  setUseNthOfType: StateSetter<boolean>;
+};
+
+export const UseNthOfType: FC<UseNthOfTypeProps> = (props) => (
+  <Chooser
+    name="use nth-of-type"
+    mode="segmented"
+    options={[
+      { value: true, label: "Yes" },
+      { value: false, label: "No" }
+    ]}
+    value={props.useNthOfType}
+    setValue={props.setUseNthOfType}
   />
 );
 

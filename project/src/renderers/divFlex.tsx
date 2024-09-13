@@ -97,7 +97,7 @@ const Cells: FC<CellsProps> = (props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV Flex",
-  willInstall: cssSupports(
+  isActive: cssSupports(
     [ "display", "flex" ],
     [ "flex-direction", "column" ],
     [ "flex-direction", "row" ],

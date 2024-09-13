@@ -110,7 +110,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV ClipPath Polygon",
-  willInstall: cssSupports(
+  isActive: cssSupports(
     [ "clip-path", "polygon( 10% 10%, 10% 30%, 30% 10% )" ]
   ),
   view: View,

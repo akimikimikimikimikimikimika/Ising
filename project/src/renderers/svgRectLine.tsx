@@ -200,7 +200,7 @@ const Cell: FC<CellProps> = memo((props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "SVG Rect / Line",
-  willInstall: Boolean(window.SVGSVGElement),
+  isActive: Boolean(window.SVGSVGElement),
   view: View,
   menu: Menu
 };

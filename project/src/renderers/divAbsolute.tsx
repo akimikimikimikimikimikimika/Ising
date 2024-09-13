@@ -9,10 +9,12 @@ const View: FC<RendererDefs.RendererProps> = (props) => (
     <StaticStyle />
     <OptionsDependentStyle
       minimized={props.divAbsoluteMinimized}
+      useNthOfType={props.useNthOfType}
       side={props.side}
     />
     <Cells
       minimized={props.divAbsoluteMinimized}
+      useNthOfType={props.useNthOfType}
       side={props.side}
       bits={props.bits}
     />
@@ -43,14 +45,30 @@ const StaticStyle: FC = memo(() => {
 
 type OptionsDependentStyleProps = {
   minimized: boolean;
+  useNthOfType: boolean;
   side: number;
 };
 
-const OptionsDependentStyle: FC<OptionsDependentStyleProps> = memo(({ minimized, side }) => {
+const OptionsDependentStyle: FC<OptionsDependentStyleProps> = memo(({ minimized, useNthOfType, side }) => {
+
+  let src = `
+    .view {
+      --side: ${side};
+    }
+  `;
 
   if (!minimized) {
-    const rules =
-      Array.from({ length: side })
+    src += `
+      .view > .on {
+        background-color: var(--on-color);
+      }
+      .view > .off {
+        background-color: var(--off-color);
+      }
+    `;
+
+    if (useNthOfType) {
+      src += Array.from({ length: side })
       .map((_,idx) => {
 
         const xConst = idx + 1;
@@ -69,85 +87,106 @@ const OptionsDependentStyle: FC<OptionsDependentStyleProps> = memo(({ minimized,
             --y: ${idx};
           }
         `;
-      });
-
-    const src = minifyCss(`
-      .view {
-        --side: ${side};
-      }
-      .view > .on {
-        background-color: var(--on-color);
-      }
-      .view > .off {
-        background-color: var(--off-color);
-      }
-      ${rules.join("")}
-    `);
-
-    return <style>{src}</style>;
+      }).join("");
+    }
   }
 
-  else {
-    const src = minifyCss(`
-      .view {
-        --side: ${side};
-      }
-    `);
-
-    return <style>{src}</style>;
-  }
-
+  return <style>{src}</style>;
 });
 
 type CellsProps = {
   minimized: boolean;
+  useNthOfType: boolean;
   side: number;
   bits: Bits;
 };
 
 const Cells: FC<CellsProps> = memo((props) => {
+  const { minimized, useNthOfType } = props;
 
-  if (!props.minimized) {
-    return <>{props.bits.map((value,idx) => (
-      <div
-        key={idx}
-        className={value ? "on" : "off"}
-      />
-    ))}</>;
+  if (!minimized) {
+
+    if (useNthOfType) {
+      return <>{props.bits.map((value,idx) => (
+        <div key={idx} className={value ? "on" : "off"} />
+      ))}</>;
+    }
+
+    else {
+      return <>{props.bits.map((value,idx) => {
+        const x = idx % props.side;
+        const y = Math.floor( idx / props.side );
+        const style = { "--x": x, "--y": y } as CSSProperties;
+        return (
+          <div
+            key={idx}
+            className={value ? "on" : "off"}
+            style={style}
+          />
+        );
+      })}</>;
+    }
+
   }
 
   else {
+
     const { bits, side } = props;
     const { majority, minors } = ArrayUtils.minimize(bits, side);
 
-    const styleSrc = minifyCss(`
+    const colorRules = `
       .view {
         background-color: var(--${ majority ? "on" : "off" }-color);
       }
       .view > div {
         background-color: var(--${ majority ? "off" : "on" }-color);
       }
-    `);
+    `;
 
-    return <>
-      <style>{styleSrc}</style>
-      {minors.map((position,idx) => {
-        const style = { "--x": position.x, "--y": position.y } as CSSProperties;
-        return (
-          <div
-            key={idx}
-            style={style}
-          />
-        );
-      })}
-    </>;
+    if (useNthOfType) {
+      const positionRules = minors.map((position, idx) => `
+        .view > div:nth-of-type(${idx+1}) {
+          --x: ${position.x};
+          ---y: ${position.y};
+        }
+      `).join("");
+
+      const styleSrc = minifyCss( colorRules + positionRules );
+      const style = <style>{styleSrc}</style>;
+
+      return <>
+        {style}
+        {minors.map((_,idx) => (
+          <div key={idx} />
+        ))}
+      </>;
+    }
+
+    else {
+      const styleSrc = minifyCss(colorRules);
+      const style = <style>{styleSrc}</style>;
+
+      return <>
+        {style}
+        {minors.map((position,idx) => {
+          const style = {
+            "--x": position.x,
+            "--y": position.y
+          } as CSSProperties;
+          return (
+            <div key={idx} style={style} />
+          );
+        })}
+      </>;
+    }
+
   }
 
 });
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV Absolute",
-  willInstall: cssSupports(
+  isActive: cssSupports(
     [ "display", "block" ],
     [ "top", "calc( 100% / 8 * 1 )" ]
   ),

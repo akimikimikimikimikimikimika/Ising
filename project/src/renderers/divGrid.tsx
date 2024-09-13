@@ -137,7 +137,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV Grid",
-  willInstall: cssSupports(
+  isActive: cssSupports(
     [ "display", "grid" ],
     [ "grid-auto-flow", "row" ],
     [ "grid-auto-flow", "column" ],
