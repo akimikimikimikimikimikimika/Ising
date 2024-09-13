@@ -308,7 +308,7 @@ Error generating stack: `+i.message+`
     `;if(n){const s=o.map((m,f)=>`
         .view > div:nth-of-type(${f+1}) {
           --x: ${m.x};
-          ---y: ${m.y};
+          --y: ${m.y};
         }
       `).join(""),a=M(u+s),d=c.jsx("style",{children:a});return c.jsxs(c.Fragment,{children:[d,o.map((m,f)=>c.jsx("div",{},f))]})}else{const s=M(u),a=c.jsx("style",{children:s});return c.jsxs(c.Fragment,{children:[a,o.map((d,m)=>{const f={"--x":d.x,"--y":d.y};return c.jsx("div",{style:f},m)})]})}}else return n?c.jsx(c.Fragment,{children:e.bits.map((r,l)=>c.jsx("div",{className:r?"on":"off"},l))}):c.jsx(c.Fragment,{children:e.bits.map((r,l)=>{const i=l%e.side,o=Math.floor(l/e.side),u={"--x":i,"--y":o};return c.jsx("div",{className:r?"on":"off",style:u},l)})})}),Wv={name:"DIV Absolute",isActive:Ye(["display","block"],["top","calc( 100% / 8 * 1 )"]),view:Iv,menu:Om},Hv=e=>c.jsxs("div",{className:"view",children:[c.jsx(Gv,{}),c.jsx(Qv,{writingMode:e.divInlineBlockWritingMode,direction:e.divInlineBlockDirection}),c.jsx(Yv,{side:e.side}),c.jsx(Zv,{side:e.side,bits:e.bits,writingMode:e.divInlineBlockWritingMode,direction:e.divInlineBlockDirection})]}),Gv=S.memo(()=>{const e=M(`
     .view {

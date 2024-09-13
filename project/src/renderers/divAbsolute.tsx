@@ -147,7 +147,7 @@ const Cells: FC<CellsProps> = memo((props) => {
       const positionRules = minors.map((position, idx) => `
         .view > div:nth-of-type(${idx+1}) {
           --x: ${position.x};
-          ---y: ${position.y};
+          --y: ${position.y};
         }
       `).join("");
 
