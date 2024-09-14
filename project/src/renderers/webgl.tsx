@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable react-refresh/only-export-components */
+/* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { FC, useRef, useEffect, useCallback } from "react";
-import { AdaptDPR as Menu } from "./MenuOptions";
+import { AdaptDPR as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { onColor, offColor } from "../utils/consts";
 import { isNil } from "../utils/type_check";

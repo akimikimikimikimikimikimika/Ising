@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { FC, useRef, useEffect, useCallback } from "react";
-import { CanvasMenu as Menu } from "./MenuOptions";
+import { CanvasMenu as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { isNil } from "../utils/type_check";
 import { onColor, offColor } from "../utils/consts";

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-/* eslint-disable react-hooks/rules-of-hooks */
-import { useState } from "react";
-import { Rng, Bits, Orders, Parameters } from "./types";
+import { Rng, Bits, Orders } from "./types";
+import { Parameters } from "./params";
 import { isNil } from "./type_check";
 
 namespace Random {
@@ -479,19 +478,3 @@ export const cssSupports = (...args: [string, string][] ): boolean => {
 };
 
 export const minifyCss = (src: string) => src.replace(/^ +/gm,"").replace(/\n/g,"");
-
-// useState wrapper
-export const createState = (
-  <ValueKey extends string, SetterKey extends string, T>(
-    valueKey: ValueKey,
-    setterKey: SetterKey,
-    initialValue: T
-  ) => {
-    type Output =
-      { [key in ValueKey]: T } &
-      { [key in SetterKey]: StateSetter<T> };
-
-    const [value, setter] = useState(initialValue);
-    return { [valueKey]: value, [setterKey]: setter } as Output;
-  }
-);

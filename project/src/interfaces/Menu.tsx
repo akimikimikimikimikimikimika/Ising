@@ -1,6 +1,6 @@
 import { FC, useState, useRef, useCallback, useEffect } from "react";
-import { Parameters } from "../utils/types";
-import { lists as renderers, RenderOptions } from "../renderers/list";
+import { lists as renderers } from "../renderer_utils/list";
+import { Parameters, RenderOptions } from "../utils/params";
 import { isNil } from "../utils/type_check";
 import "./Menu.css";
 

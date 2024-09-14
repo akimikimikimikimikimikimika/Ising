@@ -1,8 +1,8 @@
 import { FC, useEffect } from "react";
 import { Container } from "./View";
 import { Menu } from "./Menu";
-import { initParams } from "../utils/types";
-import { lists as renderers, initRenderOptions } from "../renderers/list";
+import { lists as renderers } from "../renderer_utils/list";
+import { initParams, initRenderOptions } from "../utils/params";
 import { isNil } from "../utils/type_check";
 import "./App.css";
 

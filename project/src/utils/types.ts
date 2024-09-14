@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { FC } from "react";
-import { RenderOptions } from "../renderers/list";
-import { createState } from "../utils/utils";
+import { RenderOptions } from "./params";
 
 export const RngConsts = {
   Normal: "normal",
@@ -15,53 +14,6 @@ export const ThemeConsts = {
   Auto: "theme-auto"
 } as const;
 export type Theme = Literal<typeof ThemeConsts>;
-
-export type Parameters = ReturnType<typeof initParams>;
-
-export const initParams = () => (
-  {
-    ...createState(
-      "temp",
-      "setTemp",
-      1 as number
-    ),
-    ...createState(
-      "magField",
-      "setMagField",
-      0 as number
-    ),
-    ...createState(
-      "interaction",
-      "setInteraction",
-      1 as number
-    ),
-    ...createState(
-      "pixels",
-      "setPixels",
-      50 as number
-    ),
-    ...createState(
-      "interval",
-      "setInterval",
-      100 as number
-    ),
-    ...createState(
-      "playing",
-      "setPlaying",
-      false as boolean
-    ),
-    ...createState(
-      "rng",
-      "setRng",
-      "crypto" as Rng
-    ),
-    ...createState(
-      "theme",
-      "setTheme",
-      "theme-auto" as Theme
-    )
-  }
-);
 
 export type Bits = boolean[];
 export type Orders = number[];

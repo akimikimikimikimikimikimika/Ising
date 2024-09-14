@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { FC, useRef, useState, useEffect } from "react";
-import { AdaptDPR as Menu } from "./MenuOptions";
+import { AdaptDPR as Menu } from "../renderer_utils/MenuOptions";
 import { RendererDefs } from "../utils/types";
 import { isNil } from "../utils/type_check";
 

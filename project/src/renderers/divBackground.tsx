@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo } from "react";
-import { DivBackgroundMenu as Menu } from "./MenuOptions";
+import { DivBackgroundMenu as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
 

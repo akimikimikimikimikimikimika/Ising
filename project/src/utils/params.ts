@@ -1,73 +1,83 @@
-import { renderer as webglRenderer } from "./webgl";
-import { renderer as webgpuRenderer } from "./webgpu";
+import { useState } from "react";
+import { Rng, Theme } from "./types";
 import {
-  renderer as canvasRenderer,
   Context as CanvasContext
-} from "./canvas";
-import { renderer as divCssPaintingRenderer } from "./divCssPainting";
-import { renderer as divBackgroundRenderer } from "./divBackground";
-import { renderer as divClipPathPolygonRenderer } from "./divClipPathPolygon";
-import { renderer as divShadowRenderer } from "./divShadow";
+} from "../renderers/canvas";
 import {
-  renderer as divGradientRenderer,
   Mode as DivGradientMode
-} from "./divGradient";
+} from "../renderers/divGradient";
 import {
-  renderer as divGridRenderer,
   Mode as DivGridMode
-} from "./divGrid";
+} from "../renderers/divGrid";
 import {
-  renderer as divFlexRenderer,
   Mode as DivFlexMode
-} from "./divFlex";
-import { renderer as divAbsoluteRenderer } from "./divAbsolute";
+} from "../renderers/divFlex";
 import {
-  renderer as divInlineBlockRenderer,
   WritingMode as DivInlineBlockWritingMode,
   Direction as DivInlineBlockDirection
-} from "./divInlineBlock";
+} from "../renderers/divInlineBlock";
 import {
-  renderer as divSublatticesRenderer,
-  Mode as DivSublatticesMode,
+  DrawMode as DivSublatticesDrawMode,
+  RotateMode as DivSublatticeRotateMode,
+  Layout as DivSublatticeLayout,
   Angle as DivSublatticesAngle
-} from "./divSublattices";
+} from "../renderers/divSublattices";
 import {
-  renderer as svgPathRenderer,
   DrawAs as SvgPathDrawAs
-} from "./svgPath";
-import { renderer as svgPolygonRenderer } from "./svgPolygon";
+} from "../renderers/svgPath";
 import {
-  renderer as svgRectLineRenderer,
   DrawAs as SvgRectLineDrawAs
-} from "./svgRectLine";
+} from "../renderers/svgRectLine";
 import {
-  renderer as svgGradientRenderer,
   DrawAs as SvgGradientDrawAs
-} from "./svgGradient";
-import { RendererDefs } from "../utils/types";
-import { createState } from "../utils/utils";
+} from "../renderers/svgGradient";
 
+export type Parameters = ReturnType<typeof initParams>;
 
-
-export const lists: RendererDefs.Renderer[] = [
-  webglRenderer,
-  webgpuRenderer,
-  canvasRenderer,
-  divCssPaintingRenderer,
-  divBackgroundRenderer,
-  divClipPathPolygonRenderer,
-  divShadowRenderer,
-  divGradientRenderer,
-  divGridRenderer,
-  divFlexRenderer,
-  divAbsoluteRenderer,
-  divInlineBlockRenderer,
-  divSublatticesRenderer,
-  svgPathRenderer,
-  svgPolygonRenderer,
-  svgRectLineRenderer,
-  svgGradientRenderer,
-];
+export const initParams = () => (
+  {
+    ...createState(
+      "temp",
+      "setTemp",
+      1 as number
+    ),
+    ...createState(
+      "magField",
+      "setMagField",
+      0 as number
+    ),
+    ...createState(
+      "interaction",
+      "setInteraction",
+      1 as number
+    ),
+    ...createState(
+      "pixels",
+      "setPixels",
+      50 as number
+    ),
+    ...createState(
+      "interval",
+      "setInterval",
+      100 as number
+    ),
+    ...createState(
+      "playing",
+      "setPlaying",
+      false as boolean
+    ),
+    ...createState(
+      "rng",
+      "setRng",
+      "crypto" as Rng
+    ),
+    ...createState(
+      "theme",
+      "setTheme",
+      "theme-auto" as Theme
+    )
+  }
+);
 
 export type RenderOptions = ReturnType<typeof initRenderOptions>;
 
@@ -144,9 +154,19 @@ export const initRenderOptions = () => (
       "ltr" as DivInlineBlockDirection
     ),
     ...createState(
-      "divSublatticesMode",
-      "setDivSublatticesMode",
-      "border" as DivSublatticesMode
+      "divSublatticesDrawMode",
+      "setDivSublatticesDrawMode",
+      "border" as DivSublatticesDrawMode
+    ),
+    ...createState(
+      "divSublatticeRotateMode",
+      "setDivSublatticeRotateMode",
+      "per-cells" as DivSublatticeRotateMode
+    ),
+    ...createState(
+      "divSublatticeLayout",
+      "setDivSublatticeLayout",
+      "layout1" as DivSublatticeLayout
     ),
     ...createState(
       "divSublatticesAngle",
@@ -183,5 +203,22 @@ export const initRenderOptions = () => (
       "setSvgGradientDrawAs",
       "linear-horizontal" as SvgGradientDrawAs
     ),
+  }
+);
+
+// useState wrapper
+const createState = (
+  <ValueKey extends string, SetterKey extends string, T>(
+    valueKey: ValueKey,
+    setterKey: SetterKey,
+    initialValue: T
+  ) => {
+    type Output =
+      { [key in ValueKey]: T } &
+      { [key in SetterKey]: StateSetter<T> };
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [value, setter] = useState(initialValue);
+    return { [valueKey]: value, [setterKey]: setter } as Output;
   }
 );

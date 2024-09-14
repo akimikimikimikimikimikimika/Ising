@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { Chooser, Range } from "../interfaces/Menu";
-import { RenderOptions } from "./list";
+import { RenderOptions } from "../utils/params";
 
 export const CanvasMenu: FC<RenderOptions> = (props) => ( <>
   <Chooser
@@ -122,8 +122,19 @@ export const DivSublatticesMenu: FC<RenderOptions> = (props) => ( <>
       { value: "border", label: "Border" },
       { value: "conic-gradient", label: "Conic Gradient" }
     ]}
-    value={props.divSublatticesMode}
-    setValue={props.setDivSublatticesMode}
+    value={props.divSublatticesDrawMode}
+    setValue={props.setDivSublatticesDrawMode}
+  />
+  <UseNthOfType {...props} />
+  <Chooser
+    name="Layout"
+    mode="segmented"
+    options={[
+      { value: "layout1", label: "1" },
+      { value: "layout2", label: "2" }
+    ]}
+    value={props.divSublatticeLayout}
+    setValue={props.setDivSublatticeLayout}
   />
   <Chooser
     name="Rotation angle"
@@ -136,6 +147,16 @@ export const DivSublatticesMenu: FC<RenderOptions> = (props) => ( <>
     ]}
     value={props.divSublatticesAngle}
     setValue={props.setDivSublatticesAngle}
+  />
+  <Chooser
+    name="Rotate"
+    mode="selector"
+    options={[
+      { value: "per-cells", label: "per cells" },
+      { value: "whole-lattice", label: "whole lattice" }
+    ]}
+    value={props.divSublatticeRotateMode}
+    setValue={props.setDivSublatticeRotateMode}
   />
 </> );
 

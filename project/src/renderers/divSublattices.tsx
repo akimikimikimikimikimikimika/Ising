@@ -1,422 +1,602 @@
 /* eslint-disable react-refresh/only-export-components */
-import { FC, memo, useMemo, CSSProperties, useCallback } from "react";
-import { DivSublatticesMenu as Menu } from "./MenuOptions";
+/* eslint-disable @typescript-eslint/no-namespace */
+import { FC, memo, useMemo, CSSProperties } from "react";
+import { DivSublatticesMenu as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { cssSupports, minifyCss } from "../utils/utils";
 
-export const ModeConsts = {
-  Border: "border",
-  ConicGradient: "conic-gradient",
-} as const;
-export type Mode = Literal<typeof ModeConsts>;
+namespace enumDefs {
 
-export const AngleConsts = {
-  A: "45deg", B: "135deg", C: "225deg", D: "315deg",
-} as const;
-export type Angle = Literal<typeof AngleConsts>;
+  export const DrawModeConsts = {
+    Border: "border",
+    ConicGradient: "conic-gradient",
+  } as const;
+  export type DrawMode = Literal<typeof DrawModeConsts>;
+
+  export const RotateModeConsts = {
+    PerCells: "per-cells",
+    WholeLattice: "whole-lattice",
+  } as const;
+  export type RotateMode = Literal<typeof RotateModeConsts>;
+
+  export const LayoutConsts = {
+    A: "layout1",
+    B: "layout2"
+  } as const;
+  export type Layout = Literal<typeof LayoutConsts>;
+
+  export const AngleConsts = {
+    A: "45deg", B: "135deg", C: "225deg", D: "315deg",
+  } as const;
+  export type Angle = Literal<typeof AngleConsts>;
+
+}
+export type DrawMode = enumDefs.DrawMode;
+export type RotateMode = enumDefs.RotateMode;
+export type Layout = enumDefs.Layout;
+export type Angle = enumDefs.Angle;
 
 const View: FC<RendererDefs.RendererProps> = (props) => (
   <div className="view">
     <StaticStyle />
-    <SizeDependentStyle side={props.side} />
-    <ModeDependentStyle mode={props.divSublatticesMode} />
+    <SizeLayoutDependentStyle
+      side={props.side}
+      layout={props.divSublatticeLayout}
+      useNthOfType={props.useNthOfType}
+    />
+    <DrawModeDependentStyle drawMode={props.divSublatticesDrawMode} />
+    <RotateModeDependentStyle rotateMode={props.divSublatticeRotateMode} />
     <AngleDependentStyle angle={props.divSublatticesAngle} />
-    <Cells side={props.side} bits={props.bits} />
+    <Cells
+      side={props.side} bits={props.bits}
+      layout={props.divSublatticeLayout}
+      useNthOfType={props.useNthOfType}
+    />
   </div>
 );
 
-const StaticStyle: FC = memo(() => {
-  const src = minifyCss(`
-    .view {
-      container-type: size;
-      overflow: hidden;
+namespace subComponents {
+
+  export const StaticStyle: FC = memo(() => {
+    const src = minifyCss(`
+      .view {
+        container-type: size;
+        overflow: hidden;
+      }
+      .view > div {
+        position: absolute;
+        left: 0; top: 0;
+        width: 0; height: 0;
+        overflow: visible;
+      }
+      .view > div > div {
+        position: absolute;
+        display: block;
+        --radius: calc( 100cqmin / sqrt(2) / var(--side) );
+      }
+    `);
+
+    return <style>{src}</style>;
+  });
+
+  type SizeLayoutDependentStyleProps = {
+    side: number;
+    layout: Layout;
+    useNthOfType: boolean;
+  };
+
+  export const SizeLayoutDependentStyle: FC<SizeLayoutDependentStyleProps> = memo((props) => {
+    const { side, layout, useNthOfType } = props;
+
+    const src = minifyCss(`
+      .view {
+        --side: ${side};
+      }
+      ${useNthOfType ? nthRules.get(side, layout) : ""}
+    `);
+
+    return <style>{src}</style>;
+  });
+
+  type DrawModeDependentStyleProps = {
+    drawMode: DrawMode;
+  };
+
+  export const DrawModeDependentStyle: FC<DrawModeDependentStyleProps> = memo(({ drawMode }) => {
+
+    if ( drawMode === "border" ) {
+      const src = minifyCss(`
+        .view > div > div {
+          left: calc( var(--center-x) - var(--radius) );
+          top: calc( var(--center-y) - var(--radius) );
+          width: 0;
+          height: 0;
+          border-style: solid;
+          border-width: var(--radius);
+          border-top-color: var(--top-color);
+          border-bottom-color: var(--bottom-color);
+          border-left-color: var(--left-color);
+          border-right-color: var(--right-color);
+        }
+      `);
+
+      return <style>{src}</style>;
     }
-    .view > div {
-      position: absolute;
-      display: block;
-      --center-x: calc( 100cqmin / var(--side) * var(--x) );
-      --center-y: calc( 100cqmin / var(--side) * var(--y) );
-      --radius: calc( 100cqmin / sqrt(2) / var(--side) );
-      transform: rotate(var(--angle));
-      transform-origin: center center;
+
+    if ( drawMode === "conic-gradient" ) {
+      const src = minifyCss(`
+        .view > div > div {
+          left: calc( var(--center-x) - var(--radius) );
+          top: calc( var(--center-y) - var(--radius) );
+          width: calc( 2 * var(--radius) );
+          height: calc( 2 * var(--radius) );
+          background-image: conic-gradient(from -45deg at 50% 50%, var(--top-color) 0deg 90deg, var(--right-color) 90deg 180deg, var(--bottom-color) 180deg 270deg, var(--left-color) 270deg 360deg);
+          background-size: 100% 100%;
+          background-repeat: no-repeat;
+        }
+      `);
+
+      return <style>{src}</style>;
     }
-  `);
 
-  return <style>{src}</style>;
-});
+  });
 
-type SizeDependentStyleProps = {
-  side: number;
-};
+  type RotateModeDependentStyleProps = {
+    rotateMode: RotateMode;
+  };
 
-const SizeDependentStyle: FC<SizeDependentStyleProps> = memo(({ side }) => {
+  export const RotateModeDependentStyle: FC<RotateModeDependentStyleProps> = memo(({ rotateMode }) => {
+
+    if ( rotateMode === "per-cells" ) {
+      const src = minifyCss(`
+        .view > div > div {
+          --center-x: calc( 100cqmin / var(--side) * var(--x) );
+          --center-y: calc( 100cqmin / var(--side) * var(--y) );
+          transform: rotate(var(--angle));
+          transform-origin: center center;
+        }
+      `);
+
+      return <style>{src}</style>;
+    }
+
+    if ( rotateMode === "whole-lattice" ) {
+      const src = minifyCss(`
+        .view > div {
+          transform: rotate(var(--angle));
+          transform-origin: 0 0;
+        }
+        .view > div > div {
+          --center-x: calc( 100cqmin / var(--side) / sqrt(2) * var(--s) );
+          --center-y: calc( 100cqmin / var(--side) / sqrt(2) * var(--t) );
+        }
+      `);
+
+      return <style>{src}</style>;
+    }
+  });
+
+  type AngleConversion = {
+    [key in Angle]: {
+      offset: number;
+      transformMatrix: {
+        sx: number, sy: number,
+        tx: number, ty: number
+      };
+    }
+  };
+  const angleConversion: AngleConversion = {
+    "45deg": {
+      offset: 0,
+      transformMatrix: { sx: +1, sy: +1, tx: -1, ty: +1 }
+    },
+    "135deg": {
+      offset: 1,
+      transformMatrix: { sx: -1, sy: +1, tx: -1, ty: -1 }
+    },
+    "225deg": {
+      offset: 2,
+      transformMatrix: { sx: -1, sy: -1, tx: +1, ty: -1 }
+    },
+    "315deg": {
+      offset: 3,
+      transformMatrix: { sx: +1, sy: -1, tx: +1, ty: +1 }
+    }
+  };
+
+  const sideColors = [ "--top-color", "--right-color", "--bottom-color", "--left-color" ];
+  const corners = [ "--rt", "--rb", "--lb", "--lt" ];
+
+  type AngleDependentStyleProps = {
+    angle: Angle;
+  };
+
+  export const AngleDependentStyle: FC<AngleDependentStyleProps> = memo(({ angle }) => {
+
+    const converter = angleConversion[angle];
+
+    const colorProps =
+      sideColors.map((key,idx) => {
+        const offsetedIndex = ( idx + converter.offset ) % 4;
+        const value = corners[offsetedIndex];
+        return `${key}: var(${value});`;
+      }).join("\n");
+
+    const { sx, sy, tx, ty } = converter.transformMatrix;
+
+    const src = minifyCss(`
+      .view {
+        --angle: ${angle};
+      }
+      .view > div > div {
+        ${colorProps}
+        --s: calc( ( ${sx} * var(--x) ) + ( ${sy} * var(--y) ) );
+        --t: calc( ( ${tx} * var(--x) ) + ( ${ty} * var(--y) ) );
+      }
+    `);
+
+    return <style>{src}</style>;
+  });
+
+  type CellsProps = {
+    side: number;
+    bits: Bits;
+    layout: Layout;
+    useNthOfType: boolean;
+  };
+
+  export const Cells: FC<CellsProps> = memo((props) => {
+    const { side, bits, layout, useNthOfType } = props;
+
+    const cells = useMemo(
+      () => cellList.get(side, layout),
+      [side, layout]
+    );
+
+    const getValue =
+      (coord: cellList.Coord) => {
+        const value = bits[ coord.x + coord.y * side ];
+        return value ? "var(--on-color)" : "var(--off-color)";
+      };
+
+    return <div>{cells.map((cell,idx) => {
+      const style = {
+        "--lt": getValue(cell.leftTop),
+        "--rt": getValue(cell.rightTop),
+        "--lb": getValue(cell.leftBottom),
+        "--rb": getValue(cell.rightBottom),
+        ...(
+          useNthOfType ? {} : {
+            "--x": cell.position.x,
+            "--y": cell.position.y
+          }
+        )
+      } as CSSProperties;
+
+      return <div key={idx} style={style} />;
+    })}</div>;
+
+  });
+
+}
+const StaticStyle = subComponents.StaticStyle;
+const SizeLayoutDependentStyle = subComponents.SizeLayoutDependentStyle;
+const DrawModeDependentStyle = subComponents.DrawModeDependentStyle;
+const RotateModeDependentStyle = subComponents.RotateModeDependentStyle;
+const AngleDependentStyle = subComponents.AngleDependentStyle;
+const Cells = subComponents.Cells;
+
+namespace nthRules {
+
+  type XY = "x" | "y";
+  type Direction = "+x" | "-x" | "+y" | "-y";
+
+  type Constraint = {
+    direction: Direction;
+    basis: (coord: number, lengthX: number, lengthY: number) => number;
+  };
+  type Constraints = {
+    axis: XY,
+    constraints: [Constraint, Constraint]
+  };
+  const ruleSelectors = [
+    {
+      axis: "x",
+      constraints: [
+        { direction: "+y", basis: (x      ) =>   x           },
+        { direction: "-y", basis: (x, l, m) =>   x + l*(m-1) }
+      ]
+    } as Constraints,
+    {
+      axis: "y",
+      constraints: [
+        { direction: "+x", basis: (y, l   ) => l*y           },
+        { direction: "-x", basis: (y, l,  ) => l*y +   (l-1) }
+      ]
+    } as Constraints
+  ];
 
   type Rule = {
-    constraints: Constraint[];
-    key: "x" | "y";
+    constraints: ({
+      multiplier: number;
+      constant: number;
+    })[];
+    variable: string;
     value: number;
   };
 
-  type Constraint = {
-    // magnifier * n + constant
-    magnifier: number;
-    constant: number;
+  const ruleToStr = (rule: Rule): string => {
+    const constraintsStr =
+    rule.constraints.map(({ multiplier, constant }) => {
+      return `:nth-of-type(${multiplier}n+${constant})`;
+    }).join("");
+
+    return `
+      .view > div > div${constraintsStr} {
+        --${rule.variable}: ${rule.value};
+      }
+    `;
   };
 
-  const rules: Rule[] = (() => {
+  type CreateRulesOption = {
+    lengthX: number;
+    lengthY: number;
+    offsetIdx?: number;
+    idxToX?: (coordIdx: number) => number;
+    idxToY?: (coordIdx: number) => number;
+  };
 
-    if ( side % 2 === 0 ) {
-      const k = side / 2;
+  const createRules = (option: CreateRulesOption): string => {
+    const { lengthX: l, lengthY: m } = option;
+    const idxToX = option.idxToX ?? ( v => v );
+    const idxToY = option.idxToY ?? ( v => v );
+    const offsetIdx = option.offsetIdx ?? 0;
 
-      const a1 = Array.from({ length: k+1 }).map((_,idx) => [
-        {
-          key: "x",
-          value: 2 * idx,
-          constraints: [
-            {
-              magnifier: k + 1,
-              constant: idx + 1
-            },
-            {
-              magnifier: -( k + 1 ),
-              constant: idx + 1 + (k+1) * k
-            }
-          ]
-        },
-        {
-          key: "y",
-          value: 2*idx,
-          constraints: [
-            {
-              magnifier: 1,
-              constant: (k+1) * idx + 1
-            },
-            {
-              magnifier: -1,
-              constant: (k+1) * (idx+1)
-            }
-          ]
+    // iterate over axes
+    return ruleSelectors.map(({ axis, constraints }) => {
+      const length = ({ x: l, y: m })[axis];
+      const idxToCoord = ({ x: idxToX, y: idxToY })[axis];
+
+      // iterate over positions along the axis
+      return Array.from({ length: length }).map(
+        (_, coordIdx) => (
+          ruleToStr({
+            constraints: constraints.map(
+              ({ direction, basis }) => ({
+                multiplier: ({ "+x": +1, "-x": -1, "+y": +l, "-y": -l })[direction],
+                constant: basis(coordIdx, l, m) + 1 + offsetIdx
+              })
+            ),
+            variable: axis, value: idxToCoord(coordIdx)
+          })
+        )
+      );
+    }).flat().join("");
+  };
+
+  export const get = (side: number, layout: Layout): string => {
+    switch ( side % 2 ) {
+      // even
+      case 0: {
+        const k = side / 2;
+        switch (layout) {
+          case "layout1":
+            return (
+              createRules({
+                lengthX: k+1, lengthY: k+1,
+                idxToX: idx => 2*idx,
+                idxToY: idx => 2*idx
+              }) +
+              createRules({
+                lengthX: k, lengthY: k,
+                idxToX: idx => 2*idx + 1,
+                idxToY: idx => 2*idx + 1,
+                offsetIdx: (k+1)**2
+              })
+            );
+          case "layout2":
+            return (
+              createRules({
+                lengthX: k+1, lengthY: k,
+                idxToX: idx => 2*idx,
+                idxToY: idx => 2*idx + 1
+              }) +
+              createRules({
+                lengthX: k, lengthY: k+1,
+                idxToX: idx => 2*idx + 1,
+                idxToY: idx => 2*idx,
+                offsetIdx: k*(k+1)
+              })
+            );
         }
-      ] as Rule[]);
-
-      const a2 = Array.from({ length: k }).map((_,idx) => [
-        {
-          key: "x",
-          value: 2 * idx + 1,
-          constraints: [
-            {
-              magnifier: k,
-              constant: idx + 1 + (k+1)**2
-            },
-            {
-              magnifier: -k,
-              constant: idx + k*(k-1) + 1 + (k+1)**2
-            }
-          ]
-        },
-        {
-          key: "y",
-          value: 2 * idx + 1,
-          constraints: [
-            {
-              magnifier: 1,
-              constant: k*idx + 1 + (k+1)**2
-            },
-            {
-              magnifier: -1,
-              constant: k*(idx+1) + (k+1)**2
-            }
-          ]
+      } break;
+      // odd
+      case 1: {
+        const k = ( side + 1 ) / 2;
+        switch (layout) {
+          case "layout1":
+            return (
+              createRules({
+                lengthX: k, lengthY: k,
+                idxToX: idx => 2*idx,
+                idxToY: idx => 2*idx
+              }) +
+              createRules({
+                lengthX: k, lengthY: k,
+                idxToX: idx => 2*idx + 1,
+                idxToY: idx => 2*idx + 1,
+                offsetIdx: k**2
+              })
+            );
+          case "layout2":
+            return (
+              createRules({
+                lengthX: k, lengthY: k,
+                idxToX: idx => 2*idx,
+                idxToY: idx => 2*idx + 1
+              }) +
+              createRules({
+                lengthX: k, lengthY: k,
+                idxToX: idx => 2*idx + 1,
+                idxToY: idx => 2*idx,
+                offsetIdx: k**2
+              })
+            );
         }
-      ] as Rule[]);
+      } break;
+    }
+    // you should not reach to this line
+    return "";
+  };
 
-      return [ ...a1, ...a2 ].flat();
+}
+
+namespace cellList {
+
+  type Cell = {
+    leftTop: Coord;
+    rightTop: Coord;
+    leftBottom: Coord;
+    rightBottom: Coord;
+    position: Coord;
+  };
+  export type Coord = { x: number, y: number };
+
+  export const get = (side: number, layout: Layout): Cell[] => {
+
+    const coord = (x: number, y: number): Coord => ({
+      x: normalizeCoord(x, side),
+      y: normalizeCoord(y, side)
+    });
+
+    switch ( side % 2 ) {
+      // even
+      case 0: {
+        const k = side / 2;
+        switch (layout) {
+          case "layout1":
+            return [
+              ...perCell(
+                k+1, k+1,
+                (x,y) => ({
+                  leftTop:     coord( 2*x - 1, 2*y - 1 ),
+                  rightTop:    coord( 2*x    , 2*y - 1 ),
+                  leftBottom:  coord( 2*x - 1, 2*y     ),
+                  rightBottom: coord( 2*x    , 2*y     ),
+                  position:    { x: 2*x, y: 2*y }
+                })
+              ),
+              ...perCell(
+                k, k,
+                (x,y) => ({
+                  leftTop:     coord( 2*x    , 2*y     ),
+                  rightTop:    coord( 2*x + 1, 2*y     ),
+                  leftBottom:  coord( 2*x    , 2*y + 1 ),
+                  rightBottom: coord( 2*x + 1, 2*y + 1 ),
+                  position:    { x: 2*x + 1, y: 2*y + 1 }
+                })
+              ),
+            ];
+          case "layout2":
+            return [
+              ...perCell(
+                k+1, k,
+                (x,y) => ({
+                  leftTop:     coord( 2*x - 1, 2*y     ),
+                  rightTop:    coord( 2*x    , 2*y     ),
+                  leftBottom:  coord( 2*x - 1, 2*y + 1 ),
+                  rightBottom: coord( 2*x    , 2*y + 1 ),
+                  position:    { x: 2*x, y: 2*y + 1 }
+                })
+              ),
+              ...perCell(
+                k, k+1,
+                (x,y) => ({
+                  leftTop:     coord( 2*x    , 2*y - 1 ),
+                  rightTop:    coord( 2*x + 1, 2*y - 1 ),
+                  leftBottom:  coord( 2*x    , 2*y     ),
+                  rightBottom: coord( 2*x + 1, 2*y     ),
+                  position:    { x: 2*x + 1, y: 2*y }
+                })
+              ),
+            ];
+        }
+      } break;
+      // odd
+      case 1: {
+        const k = ( side + 1 ) / 2;
+        switch (layout) {
+          case "layout1":
+            return [
+              ...perCell(
+                k, k,
+                (x,y) => ({
+                  leftTop:     coord( 2*x - 1, 2*y - 1 ),
+                  rightTop:    coord( 2*x    , 2*y - 1 ),
+                  leftBottom:  coord( 2*x - 1, 2*y     ),
+                  rightBottom: coord( 2*x    , 2*y     ),
+                  position:    { x: 2*x, y: 2*y }
+                })
+              ),
+              ...perCell(
+                k, k,
+                (x,y) => ({
+                  leftTop:     coord( 2*x    , 2*y     ),
+                  rightTop:    coord( 2*x + 1, 2*y     ),
+                  leftBottom:  coord( 2*x    , 2*y + 1 ),
+                  rightBottom: coord( 2*x + 1, 2*y + 1 ),
+                  position:    { x: 2*x + 1, y: 2*y + 1 }
+                })
+              )
+            ];
+          case "layout2":
+            return [
+              ...perCell(
+                k, k,
+                (x,y) => ({
+                  leftTop:     coord( 2*x - 1, 2*y     ),
+                  rightTop:    coord( 2*x    , 2*y     ),
+                  leftBottom:  coord( 2*x - 1, 2*y + 1 ),
+                  rightBottom: coord( 2*x    , 2*y + 1 ),
+                  position:    { x: 2*x, y: 2*y + 1 }
+                })
+              ),
+              ...perCell(
+                k, k,
+                (x,y) => ({
+                  leftTop:     coord( 2*x    , 2*y - 1 ),
+                  rightTop:    coord( 2*x + 1, 2*y - 1 ),
+                  leftBottom:  coord( 2*x    , 2*y     ),
+                  rightBottom: coord( 2*x + 1, 2*y     ),
+                  position:    { x: 2*x + 1, y: 2*y }
+                })
+              ),
+            ];
+        }
+      } break;
     }
 
-    if ( side % 2 === 1 ) {
-      const k = ( side + 1 ) / 2;
-
-      return Array.from({ length: k })
-      .map((_,idx) => [
-        {
-          key: "x",
-          value: 2 * idx,
-          constraints: [
-            {
-              magnifier: k,
-              constant: idx + 1
-            },
-            {
-              magnifier: -k,
-              constant: idx + k*(k-1) + 1
-            }
-          ]
-        },
-        {
-          key: "y",
-          value: 2 * idx,
-          constraints: [
-            {
-              magnifier: 1,
-              constant: k * idx + 1
-            },
-            {
-              magnifier: -1,
-              constant: k * (idx+1)
-            }
-          ]
-        },
-        {
-          key: "x",
-          value: 2 * idx + 1,
-          constraints: [
-            {
-              magnifier: k,
-              constant: idx + 1 + k**2
-            },
-            {
-              magnifier: -k,
-              constant: idx + k * (k-1) + 1 + k**2
-            }
-          ]
-        },
-        {
-          key: "y",
-          value: 2 * idx + 1,
-          constraints: [
-            {
-              magnifier: 1,
-              constant: k * idx + 1 + k**2
-            },
-            {
-              magnifier: -1,
-              constant: k * (idx+1) + k**2
-            }
-          ]
-        }
-      ] as Rule[]).flat();
-    }
-
+    // you should not reach to this line
     return [];
-  })();
-
-  const rulesStr =
-    rules.map(rule => {
-
-      const constraintsStr =
-      rule.constraints
-      .map(({ magnifier, constant }) => {
-        const constStr =
-          constant>0 ? ` + ${constant}` : ` - ${-constant}`;
-
-        return `:nth-of-type(${magnifier}n${constStr})`;
-      }).join("");
-
-      return `
-        .view > div${constraintsStr} {
-          --${rule.key}: ${rule.value};
-        }
-      `;
-
-    }).join("\n");
-
-  const src = minifyCss(`
-    .view {
-      --side: ${side};
-    }
-    ${rulesStr}
-  `);
-
-  return <style>{src}</style>;
-});
-
-type ModeDependentStyleProps = {
-  mode: Mode;
-};
-
-const ModeDependentStyle: FC<ModeDependentStyleProps> = memo(({ mode }) => {
-
-  if ( mode === "border" ) {
-    const src = minifyCss(`
-      .view > div {
-        left: calc( var(--center-x) - var(--radius) );
-        top: calc( var(--center-y) - var(--radius) );
-        width: 0;
-        height: 0;
-        border-style: solid;
-        border-width: var(--radius);
-        border-top-color: var(--top-color);
-        border-bottom-color: var(--bottom-color);
-        border-left-color: var(--left-color);
-        border-right-color: var(--right-color);
-      }
-    `);
-
-    return <style>{src}</style>;
-  }
-
-  if ( mode === "conic-gradient" ) {
-    const src = minifyCss(`
-      .view > div {
-        left: calc( var(--center-x) - var(--radius) );
-        right: calc( 100cqmin - var(--center-x) - var(--radius) );
-        top: calc( var(--center-y) - var(--radius) );
-        bottom: calc( 100cqmin - var(--center-y) - var(--radius) );
-        background-image: conic-gradient(from -45deg at 50% 50%, var(--top-color) 0deg 90deg, var(--right-color) 90deg 180deg, var(--bottom-color) 180deg 270deg, var(--left-color) 270deg 360deg);
-        background-size: 100% 100%;
-        background-repeat: no-repeat;
-      }
-    `);
-
-    return <style>{src}</style>;
-  }
-
-});
-
-type AngleDependentStyleProps = {
-  angle: Angle;
-};
-
-const AngleDependentStyle: FC<AngleDependentStyleProps> = memo(({ angle }) => {
-
-  const keys = [ "--top-color", "--right-color", "--bottom-color", "--left-color" ];
-  const values = [ "--rt", "--rb", "--lb", "--lt" ];
-  const angleToOffset: { [key in Angle]: number } = {
-    "45deg" : 0,
-    "135deg": 1,
-    "225deg": 2,
-    "315deg": 3
   };
 
-  const colorProps =
-    keys.map((key,idx) => {
-      const offsetedIndex = ( idx + angleToOffset[angle] ) % 4;
-      const value = values[offsetedIndex];
-      return `${key}: var(${value});`;
-    }).join("\n");
-
-  const src = minifyCss(`
-    .view > div {
-      --angle: ${angle};
-      ${colorProps}
-    }
-  `);
-
-  return <style>{src}</style>;
-});
-
-type CellsProps = {
-  side: number;
-  bits: Bits;
-};
-
-const Cells: FC<CellsProps> = memo((props) => {
-  const { side, bits } = props;
-
-  const cells = useMemo(
-    () => getCellList(side),
-    [side]
+  const perCell = (
+    lengthX: number, lengthY: number,
+    factory: (x: number, y: number) => Cell
+  ): Cell[] => (
+    Array.from({ length: lengthX*lengthY })
+    .map((_,idx) => {
+      const x = idx % lengthX;
+      const y = Math.floor( idx / lengthX );
+      return factory(x, y);
+    })
   );
 
-  const normalizeCoord = useCallback(
-    (coord: number) => Math.min( Math.max( coord, 0 ), side-1 ),
-    [side]
+  const normalizeCoord = (coord: number, side: number) => (
+    Math.min( Math.max( coord, 0 ), side-1 )
   );
 
-  const getValue =
-    (coord:Coord) => {
-      const x = normalizeCoord(coord.x);
-      const y = normalizeCoord(coord.y);
-      const value = bits[ x + y * side ];
-
-      return value ? "var(--on-color)" : "var(--off-color)";
-    };
-
-  return <>{cells.map((cell,idx) => {
-    const style = {
-      "--lt": getValue(cell.leftTop),
-      "--rt": getValue(cell.rightTop),
-      "--lb": getValue(cell.leftBottom),
-      "--rb": getValue(cell.rightBottom),
-    } as CSSProperties;
-
-    return <div key={idx} style={style} />;
-  })}</>;
-
-});
-
-type Cell = {
-  leftTop: Coord;
-  rightTop: Coord;
-  leftBottom: Coord;
-  rightBottom: Coord;
-};
-type Coord = { x: number, y: number };
-
-const getCellList = (side: number): Cell[] => {
-
-  if ( side % 2 === 0 ) {
-    const k = side / 2;
-
-    const a1 = Array.from({ length: (k+1)**2 }).map((_,idx) => {
-      const x = idx % (k+1);
-      const y = Math.floor( idx / (k+1) );
-
-      return {
-        leftTop:     { x: 2*x - 1, y: 2*y - 1 },
-        rightTop:    { x: 2*x    , y: 2*y - 1 },
-        leftBottom:  { x: 2*x - 1, y: 2*y     },
-        rightBottom: { x: 2*x    , y: 2*y     }
-      } as Cell;
-    });
-
-    const a2 = Array.from({ length: k**2 }).map((_,idx) => {
-      const x = idx % k;
-      const y = Math.floor( idx / k );
-
-      return {
-        leftTop:     { x: 2*x    , y: 2*y     },
-        rightTop:    { x: 2*x + 1, y: 2*y     },
-        leftBottom:  { x: 2*x    , y: 2*y + 1 },
-        rightBottom: { x: 2*x + 1, y: 2*y + 1 }
-      } as Cell;
-    });
-
-    return [ ...a1, ...a2 ];
-  }
-
-  if ( side % 2 === 1 ) {
-    const k = ( side + 1 ) / 2;
-
-    const a1 = Array.from({ length: k**2 }).map((_,idx) => {
-      const x = idx % k;
-      const y = Math.floor( idx / k );
-
-      return {
-        leftTop:     { x: 2*x - 1, y: 2*y - 1 },
-        rightTop:    { x: 2*x    , y: 2*y - 1 },
-        leftBottom:  { x: 2*x - 1, y: 2*y     },
-        rightBottom: { x: 2*x    , y: 2*y     }
-      } as Cell;
-    });
-
-    const a2 = Array.from({ length: k**2 }).map((_,idx) => {
-      const x = idx % k;
-      const y = Math.floor( idx / k );
-
-      return {
-        leftTop:     { x: 2*x    , y: 2*y     },
-        rightTop:    { x: 2*x + 1, y: 2*y     },
-        leftBottom:  { x: 2*x    , y: 2*y + 1 },
-        rightBottom: { x: 2*x + 1, y: 2*y + 1 }
-      } as Cell;
-    });
-
-    return [ ...a1, ...a2 ];
-  }
-
-  return [];
-};
+}
 
 export const renderer : RendererDefs.Renderer = {
   name: "DIV Sublattices",

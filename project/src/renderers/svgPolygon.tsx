@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, ReactNode } from "react";
-import { SvgPolygonMenu as Menu } from "./MenuOptions";
+import { SvgPolygonMenu as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { ArrayUtils, minifyCss } from "../utils/utils";
 

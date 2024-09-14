@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo } from "react";
-import { DivGradientMenu as Menu } from "./MenuOptions";
+import { DivGradientMenu as Menu } from "../renderer_utils/MenuOptions";
 import { RendererDefs, Bits } from "../utils/types";
 import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
 

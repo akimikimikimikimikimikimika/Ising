@@ -1,8 +1,9 @@
 import { FC, useState, useRef, useEffect, memo } from "react";
-import { Parameters, Bits, RendererDefs } from "../utils/types";
+import { Bits, RendererDefs } from "../utils/types";
 import { Calc, Runner, minifyCss } from "../utils/utils";
 import { onColor, offColor } from "../utils/consts";
-import { lists as renderers, RenderOptions } from "../renderers/list";
+import { Parameters, RenderOptions } from "../utils/params";
+import { lists as renderers } from "../renderer_utils/list";
 import { isNil } from "../utils/type_check";
 import "./View.css";
 
