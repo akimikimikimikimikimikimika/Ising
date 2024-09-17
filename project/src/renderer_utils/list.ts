@@ -11,6 +11,7 @@ import { renderer as divFlexRenderer } from "../renderers/divFlex";
 import { renderer as divAbsoluteRenderer } from "../renderers/divAbsolute";
 import { renderer as divInlineBlockRenderer } from "../renderers/divInlineBlock";
 import { renderer as divSublatticesRenderer } from "../renderers/divSublattices";
+import { renderer as tableRenderer } from "../renderers/table";
 import { renderer as svgPathRenderer } from "../renderers/svgPath";
 import { renderer as svgPolygonRenderer } from "../renderers/svgPolygon";
 import { renderer as svgRectLineRenderer } from "../renderers/svgRectLine";
@@ -31,6 +32,7 @@ export const lists: RendererDefs.Renderer[] = [
   divAbsoluteRenderer,
   divInlineBlockRenderer,
   divSublatticesRenderer,
+  tableRenderer,
   svgPathRenderer,
   svgPolygonRenderer,
   svgRectLineRenderer,
