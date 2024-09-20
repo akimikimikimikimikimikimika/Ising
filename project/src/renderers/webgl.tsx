@@ -3,23 +3,24 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { FC, useRef, useEffect, useCallback } from "react";
 import { AdaptDPR as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
+import { RendererDefs } from "../utils/types";
 import { onColor, offColor } from "../utils/consts";
+import { ArrayUtils } from "../utils/utils";
 import { isNil } from "../utils/type_check";
 
 const View: FC<RendererDefs.RendererProps> = (props) => {
 
   // canvas
-  const canvasRef = useRef<Types.Canvas|null>(null);
+  const canvasRef = useRef<Canvas|null>(null);
 
   // canvas context
-  const contextRef = useRef<Nullable<Types.Context>>(null);
+  const contextRef = useRef<Nullable<Context>>(null);
 
   // uniform / attribute locations & buffers
-  const varsRef = useRef<Nullable<Types.Variables>>(null);
+  const varsRef = useRef<Nullable<Variables>>(null);
 
   // arrays
-  const arraysRef = useRef<Nullable<Types.Arrays>>(null);
+  const arraysRef = useRef<Nullable<Arrays>>(null);
 
   // initialize program
   useEffect(() => {
@@ -29,14 +30,14 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
 
     // get context from canvas
     const context =
-      canvas.getContext(glMode) as Types.Context|null;
+      canvas.getContext(glMode) as Context|null;
     if (isNil(context)) {
       props.notifyFailure("Failed to create context");
       return;
     }
     contextRef.current = context;
 
-    varsRef.current = GLCommands.initialize(context, props.notifyFailure);
+    varsRef.current = initialize(context, props.notifyFailure);
   }, [contextRef.current]);
 
   // resize receiver
@@ -45,13 +46,13 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
     const context = contextRef.current;
     if ( isNil(canvas) || isNil(context) ) return;
 
-    GLCommands.resize(canvas, context, props.adaptDevicePixelRatio);
+    resize(canvas, context, props.adaptDevicePixelRatio);
     draw();
   }, [canvasRef.current, props.windowSize, props.adaptDevicePixelRatio]);
 
   // state change receiver
   useEffect(() => {
-    const arrays = convertData(props.bits,props.side);
+    const arrays = ArrayUtils.getVertices(props.bits, props.side);
     if (isNil(arrays)) return;
     arraysRef.current = arrays;
 
@@ -65,11 +66,13 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
     const arrays = arraysRef.current;
     if ( isNil(context) || isNil(vars) || isNil(arrays) ) return;
 
-    GLCommands.draw(context, vars, arrays, props.side);
+    Draw.main(context, vars, arrays, props.side);
   }, [props.side]);
 
   return <canvas className="view" ref={canvasRef} />;
 };
+
+
 
 // set WebGL mode
 // can be set to the argument of canvas.getContext
@@ -89,22 +92,29 @@ export const prototype = (() => {
     case "webgl2": return window.WebGL2RenderingContext;
     default: return null;
   }
-})() as Nullable<Types.Context>;
+})() as Nullable<Context>;
+
+
 
 // shader type and source code
-const shaders: Types.Shader[] = [
+const shaders: Shader[] = [
   {
     type: prototype?.VERTEX_SHADER,
     code: `
-      attribute vec3 position;
-      uniform int pixel;
+      attribute vec2 position;
+      attribute float value;
+      uniform int side;
 
-      varying float spin;
+      varying float varyingValue;
 
       void main() {
-        vec2 p = position.xy/float(pixel);
-        gl_Position = vec4(-1.0+p.x*2.0,+1.0-p.y*2.0,0.0,1.0);
-        spin = position.z;
+        float x = float(position.x) / float(side);
+        float y = float(position.y) / float(side);
+        float normX = -1.0 + 2.0 * x;
+        float normY = +1.0 - 2.0 * y;
+        gl_Position = vec4( normX, normY, 0.0, 1.0 );
+
+        varyingValue = value;
       }
     `
   },
@@ -115,359 +125,263 @@ const shaders: Types.Shader[] = [
       uniform vec4 onColor;
       uniform vec4 offColor;
 
-      varying float spin;
+      varying float varyingValue;
 
       void main() {
-        gl_FragColor = spin * onColor + (1.0-spin) * offColor;
+        gl_FragColor = varyingValue > 0.5 ? onColor : offColor;
       }
     `
   }
 ];
+type Shader = { type: Nullable<GLenum>; code: string; };
 
-// type definitions
-namespace Types {
+type Canvas = HTMLCanvasElement;
+type Context = WebGL2RenderingContext | WebGLRenderingContext;
 
-  export type Canvas = HTMLCanvasElement;
+type Variables = {
+  sideUnifLoc: WebGLUniformLocation;
+  onColorUnifLoc: WebGLUniformLocation;
+  offColorUnifLoc: WebGLUniformLocation;
+  positionsAttribLoc: GLint;
+  valuesAttribLoc: GLint;
+  positionsBuffer: WebGLBuffer;
+  valuesBuffer: WebGLBuffer;
+  indicesBuffer: WebGLBuffer;
+};
+type Arrays = ArrayUtils.VerticesArrays;
 
-  export type Context = WebGL2RenderingContext | WebGLRenderingContext;
+type ErrFunc = (message?:string) => void;
 
-  export type Shader = { type: Nullable<GLenum>; code: string; };
 
-  export type Variables = {
-    pixelLoc: WebGLUniformLocation;
-    onColorLoc: WebGLUniformLocation;
-    offColorLoc: WebGLUniformLocation;
-    positionsLoc: GLint;
-    positionsBuf: WebGLBuffer;
-    indicesBuf: WebGLBuffer;
-  };
 
-  export type Arrays = {
-    positions: Float32Array;
-    indices: Int16Array;
-  };
+// a routine when it is being initialized
+export const initialize = (
+  context: Context,
+  errorReporter: ErrFunc
+): Nullable<Variables> => {
+  try { return Initialize.main(context); }
+  catch (e) {
+    errorReporter( (e as Error).message );
+  }
+};
 
-  export type ErrFunc = (message?:string) => void;
+// implementation of initialization
+namespace Initialize {
 
-}
+  export const main = (context: Context): Variables => {
+    const program = createProgram(context);
+    for (const shader of shaders) Shader.setUp(context, program, shader);
+    linkProgram(context, program);
+    context.useProgram(program);
+    const vars = setupVariables(context, program);
+    return vars;
+  }
 
-// routines of gl command calls
-namespace GLCommands {
-
-  // a routine when it is being initialized
-  export const initialize = (
-    context: Types.Context,
-    errorReporter: Types.ErrFunc
-  ): Nullable<Types.Variables> => {
-    try { return Initialize.main(context); }
-    catch (e) {
-      errorReporter( (e as Error).message );
+  const createProgram = (context: Context): WebGLProgram => {
+    const program = context.createProgram();
+    if (isNil(program)) {
+      throw Error("Failed to create program");
     }
+    return program;
   };
 
-  // implementation of initialization
-  namespace Initialize {
+  namespace Shader {
 
-    export const main = (context: Types.Context): Types.Variables => {
-      const program = createProgram(context);
-      for (const shader of shaders) Shader.setUp(context, program, shader);
-      linkProgram(context, program);
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const vars = useProgram(context, program);
-      return vars;
-    }
-
-    const createProgram = (context: Types.Context): WebGLProgram => {
-      const program = context.createProgram();
-      if (isNil(program)) {
-        throw Error("Failed to create program");
-      }
-      return program;
+    export const setUp = (context: Context, program: WebGLProgram, shaderInfo: Shader) => {
+      const shader = createShader(context, shaderInfo);
+      compileShader(context, shader);
+      attachShader(context, program, shader);
     };
 
-    namespace Shader {
+    const createShader = (context: Context, shaderInfo: Shader): WebGLShader => {
+      const { type, code } = shaderInfo;
 
-      export const setUp = (context: Types.Context, program: WebGLProgram, shaderInfo: Types.Shader) => {
-        const shader = createShader(context, shaderInfo);
-        compileShader(context, shader);
-        attachShader(context, program, shader);
-      };
+      const shader = context.createShader(type!);
+      if (isNil(shader)) {
+        throw Error("Failed to create shader");
+      }
 
-      const createShader = (context: Types.Context, shaderInfo: Types.Shader): WebGLShader => {
-        const { type, code } = shaderInfo;
+      context.shaderSource(shader, code);
 
-        const shader = context.createShader(type!);
-        if (isNil(shader)) {
-          throw Error("Failed to create shader");
-        }
+      return shader;
+    };
 
-        context.shaderSource(shader, code);
+    const compileShader = (context: Context, shader: WebGLShader) => {
+      context.compileShader(shader);
 
-        return shader;
-      };
-
-      const compileShader = (context: Types.Context, shader: WebGLShader) => {
-        context.compileShader(shader);
-
-        const param = context.getShaderParameter(shader,context.COMPILE_STATUS);
-
-        if (!param) {
-          const log = context.getShaderInfoLog(shader);
-          let msg = "Failed to compile shader";
-          if (!isNil(log)) msg += ` (${log})`;
-          throw Error(msg);
-        }
-      };
-
-      const attachShader = (context: Types.Context, program: WebGLProgram, shader: WebGLShader) => {
-        context.attachShader(program, shader);
-      };
-
-    }
-
-    const linkProgram = (context: Types.Context, program: WebGLProgram) => {
-      context.linkProgram(program);
-
-      const param = context.getProgramParameter(program, context.LINK_STATUS);
+      const param = context.getShaderParameter(shader,context.COMPILE_STATUS);
 
       if (!param) {
-        const log = context.getProgramInfoLog(program);
-        let msg = "Failed to link program";
+        const log = context.getShaderInfoLog(shader);
+        let msg = "Failed to compile shader";
         if (!isNil(log)) msg += ` (${log})`;
         throw Error(msg);
       }
-
     };
 
-    const useProgram = (context: Types.Context, program: WebGLProgram): Types.Variables => {
-
-      context.useProgram(program);
-
-      const pixelLoc = context.getUniformLocation(program, "pixel");
-      if (isNil(pixelLoc)) throw Error("Failed to get uniform location of pixel");
-
-      const onColorLoc = context.getUniformLocation(program, "onColor");
-      if (isNil(onColorLoc)) throw Error("Failed to get uniform location of onColor");
-
-      const offColorLoc = context.getUniformLocation(program, "offColor");
-      if (isNil(offColorLoc)) throw Error("Failed to get uniform location of offColor");
-
-      const positionsLoc = context.getAttribLocation(program, "position");
-      if (isNil(positionsLoc)) throw Error("Failed to get attribute location of position");
-
-      const positionsBuf = context.createBuffer();
-      if (isNil(positionsBuf)) throw Error("Failed to create buffer");
-
-      const indicesBuf = context.createBuffer();
-      if (isNil(indicesBuf)) throw Error("Failed to create buffer");
-
-      return { pixelLoc, onColorLoc, offColorLoc, positionsLoc, positionsBuf, indicesBuf };
+    const attachShader = (context: Context, program: WebGLProgram, shader: WebGLShader) => {
+      context.attachShader(program, shader);
     };
 
   }
 
-  // a routine when it is being resized
-  export const resize = (
-    canvas: Types.Canvas, context: Types.Context,
-    adaptDevicePixelRatio: boolean
-  ) => {
-    const bcr = canvas.getBoundingClientRect();
-    const dpr = adaptDevicePixelRatio ? window.devicePixelRatio : 1;
+  const linkProgram = (context: Context, program: WebGLProgram) => {
+    context.linkProgram(program);
 
-    const width = bcr.width * dpr;
-    const height = bcr.height * dpr;
-    canvas.width = width;
-    canvas.height = height;
+    const param = context.getProgramParameter(program, context.LINK_STATUS);
 
-    context.viewport(0,0,width,height);
-  };
-
-  namespace Draw {
-
-    export const main = (
-      context: Types.Context,
-      vars: Types.Variables,
-      arrays: Types.Arrays,
-      side: number
-    ) => {
-      clear(context);
-
-      const onColorFloat = new Float32Array([...onColor].map(v => v/255));
-      const offColorFloat = new Float32Array([...offColor].map(v => v/255));
-
-      context.uniform1i(vars.pixelLoc, side);
-      context.uniform4fv(vars.onColorLoc, onColorFloat);
-      context.uniform4fv(vars.offColorLoc, offColorFloat);
-
-      sendDataToBuffer(
-        context,
-        context.ARRAY_BUFFER,
-        vars.positionsBuf,
-        arrays.positions
-      );
-      activateAttribute(context, vars.positionsLoc);
-
-      sendDataToBuffer(
-        context,
-        context.ELEMENT_ARRAY_BUFFER,
-        vars.indicesBuf,
-        arrays.indices
-      );
-
-      const vertices = 6 * (side**2);
-      draw(context, vertices);
-    };
-
-    const clear = (context: Types.Context) => {
-      context.clearColor(0,0,0,0);
-      context.clear(context.COLOR_BUFFER_BIT);
-    };
-
-    const sendDataToBuffer = (
-      context: Types.Context,
-      target: GLenum,
-      buffer: WebGLBuffer,
-      data: AllowSharedBufferSource
-    ) => {
-      context.bindBuffer(target, buffer);
-      context.bufferData(
-        target, data,
-        context.STATIC_DRAW
-      );
-    };
-
-    const activateAttribute = (
-      context: Types.Context,
-      location: GLint
-    ) => {
-      context.enableVertexAttribArray(location);
-      context.vertexAttribPointer(
-        location, 3,
-        context.FLOAT,
-        false,
-        0, 0
-      );
-    };
-
-    const draw = (
-      context: Types.Context,
-      vertices: number
-    ) => {
-      context.drawElements(
-        context.TRIANGLES,
-        vertices,
-        context.UNSIGNED_SHORT,
-        0
-      );
-    };
+    if (!param) {
+      const log = context.getProgramInfoLog(program);
+      let msg = "Failed to link program";
+      if (!isNil(log)) msg += ` (${log})`;
+      throw Error(msg);
+    }
 
   };
 
-  // a routine when it is being drawn
-  export const draw = Draw.main;
+  const setupVariables = (context: Context, program: WebGLProgram): Variables => {
+
+    const sideUnifLoc = context.getUniformLocation(program, "side");
+    if (isNil(sideUnifLoc)) throw Error("Failed to get uniform location of side");
+
+    const onColorUnifLoc = context.getUniformLocation(program, "onColor");
+    if (isNil(onColorUnifLoc)) throw Error("Failed to get uniform location of onColor");
+
+    const offColorUnifLoc = context.getUniformLocation(program, "offColor");
+    if (isNil(offColorUnifLoc)) throw Error("Failed to get uniform location of offColor");
+
+    const positionsAttribLoc = context.getAttribLocation(program, "position");
+    if (isNil(positionsAttribLoc)) throw Error("Failed to get attribute location of position");
+
+    const valuesAttribLoc = context.getAttribLocation(program, "value");
+    if (isNil(valuesAttribLoc)) throw Error("Failed to get attribute location of value");
+
+    const positionsBuffer = context.createBuffer();
+    if (isNil(positionsBuffer)) throw Error("Failed to create buffer");
+
+    const valuesBuffer = context.createBuffer();
+    if (isNil(valuesBuffer)) throw Error("Failed to create buffer");
+
+    const indicesBuffer = context.createBuffer();
+    if (isNil(indicesBuffer)) throw Error("Failed to create buffer");
+
+    return {
+      sideUnifLoc, onColorUnifLoc, offColorUnifLoc,
+      positionsAttribLoc, valuesAttribLoc,
+      positionsBuffer, valuesBuffer, indicesBuffer
+    };
+  };
 
 }
 
-// convert state data to arrays of positions and indices
-const convertData = (bits: Bits, side: number): Nullable<Types.Arrays> => {
+// a routine when it is being resized
+export const resize = (
+  canvas: Canvas, context: Context,
+  adaptDevicePixelRatio: boolean
+) => {
+  const bcr = canvas.getBoundingClientRect();
+  const dpr = adaptDevicePixelRatio ? window.devicePixelRatio : 1;
 
-  // In "positions", we set tuples of xy coordinates and values. We do not set dupliate values there, to reduce memory.
-  // In "indices", we set indices of "positions", constituting triangles.
+  const width = bcr.width * dpr;
+  const height = bcr.height * dpr;
+  canvas.width = width;
+  canvas.height = height;
 
-  if ( side === 0 ) return null;
+  context.viewport(0,0,width,height);
+};
 
-  type Position = { x: number, y: number, value: boolean };
-  type VertexIndex = {
-    leftTop: number; rightTop: number;
-    leftBottom: number; rightBottom: number;
+// implementation of draw
+namespace Draw {
+
+  export const main = (
+    context: Context,
+    vars: Variables,
+    arrays: Arrays,
+    side: number
+  ) => {
+    clear(context);
+
+    const onColorFloat = new Float32Array([...onColor].map(v => v/255));
+    const offColorFloat = new Float32Array([...offColor].map(v => v/255));
+
+    context.uniform1i(vars.sideUnifLoc, side);
+    context.uniform4fv(vars.onColorUnifLoc, onColorFloat);
+    context.uniform4fv(vars.offColorUnifLoc, offColorFloat);
+
+    sendDataToBuffer(
+      context,
+      context.ARRAY_BUFFER,
+      vars.positionsBuffer,
+      new Float32Array(arrays.positions)
+    );
+    activateAttribute(context, vars.positionsAttribLoc, 2);
+
+    sendDataToBuffer(
+      context,
+      context.ARRAY_BUFFER,
+      vars.valuesBuffer,
+      new Float32Array(arrays.values.map(value => value ? 1 : 0))
+    );
+    activateAttribute(context, vars.valuesAttribLoc, 1);
+
+    sendDataToBuffer(
+      context,
+      context.ELEMENT_ARRAY_BUFFER,
+      vars.indicesBuffer,
+      new Uint16Array(arrays.indices)
+    );
+
+    const vertices = 6 * (side**2);
+    draw(context, vertices);
   };
 
-  const positions: Position[] = [];
-  const indices: VertexIndex[] = [];
+  const clear = (context: Context) => {
+    context.clearColor(0,0,0,0);
+    context.clear(context.COLOR_BUFFER_BIT);
+  };
 
-  // The index counter
-  let indexCounter = 0;
+  const sendDataToBuffer = (
+    context: Context,
+    target: GLenum,
+    buffer: WebGLBuffer,
+    data: AllowSharedBufferSource
+  ) => {
+    context.bindBuffer(target, buffer);
+    context.bufferData(
+      target, data,
+      context.STATIC_DRAW
+    );
+  };
 
-  // xy coordinate to index
-  const xy2i = (x: number, y: number) => x + y * side;
+  const activateAttribute = (
+    context: Context,
+    location: GLint,
+    size: number
+  ) => {
+    context.enableVertexAttribArray(location);
+    context.vertexAttribPointer(
+      location, size,
+      context.FLOAT,
+      false,
+      0, 0
+    );
+  };
 
-  // iterate over the cells
-  for (let y=0;y<side;y++) for (let x=0;x<side;x++) {
+  const draw = (
+    context: Context,
+    vertices: number
+  ) => {
+    context.drawElements(
+      context.TRIANGLES,
+      vertices,
+      context.UNSIGNED_SHORT,
+      0
+    );
+  };
 
-    const value = bits[xy2i(x,y)];
-
-    // the index for vertices of this cell
-    const index: VertexIndex = {
-      leftTop: -1, rightTop: -1,
-      leftBottom: -1, rightBottom: -1
-    };
-
-    // if upper cell exists, and the value is same as upper
-    // then set the positions of left top and right top vertices
-    if ( y>0 && value === bits[xy2i(x,y-1)] ) {
-      const indexUpper = indices[xy2i(x,y-1)];
-      index.leftTop = indexUpper.leftBottom;
-      index.rightTop = indexUpper.rightBottom;
-    }
-    else {
-      positions.push({ x: x+1, y: y, value });
-      index.rightTop = indexCounter;
-      indexCounter++;
-    }
-
-    // if left cell exists, and the value is same as left
-    // then set the positions of left top and left bottom vertices
-    if ( x>0 && value === bits[xy2i(x-1,y)] ) {
-      const indexLeft = indices[xy2i(x-1,y)];
-      index.leftTop = indexLeft.rightTop;
-      index.leftBottom = indexLeft.rightBottom;
-    }
-    else {
-      positions.push({ x: x, y: y+1, value });
-      index.leftBottom = indexCounter;
-      indexCounter++;
-    }
-
-    // if both of the above conditions do not meet, set the position of left top vertex
-    if (index.leftTop < 0) {
-      positions.push({ x, y, value });
-      index.leftTop = indexCounter;
-      indexCounter++;
-    }
-
-    // set the position of right bottom vertex
-    {
-      positions.push({ x: x+1, y: y+1, value });
-      index.rightBottom = indexCounter;
-      indexCounter++;
-    }
-
-    // add the index of this cell to the indices list
-    indices.push(index);
-
-  }
-
-  // convert arrays to the desired formats
-  const positionsArray = new Float32Array(
-    positions.map(
-      ({ x, y, value }) => [ x, y, value ? 1 : 0 ] as number[]
-    ).flat()
-  );
-  const indicesArray = new Int16Array(
-    indices.map(
-      ({ leftTop, rightTop, leftBottom, rightBottom }) => [
-        // constituting two triangles
-        leftTop, rightTop, leftBottom,
-        rightTop, leftBottom, rightBottom
-      ]
-    ).flat()
-  );
-
-  return {
-    positions: positionsArray,
-    indices: indicesArray
-  }
 };
+
+
 
 export const renderer : RendererDefs.Renderer = {
   name: glMode === "webgl2" ? "WebGL 2" : "WebGL",

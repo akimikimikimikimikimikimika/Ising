@@ -388,7 +388,6 @@ export namespace ArrayUtils {
     };
 
   }
-
   export const minimize = Minimize.minimize;
 
   namespace Polygon {
@@ -467,6 +466,121 @@ export namespace ArrayUtils {
 
   }
   export const makeStops = StopInfo.makeStops;
+
+  namespace Vertices {
+
+    export type Arrays = {
+      // x,y coordinates of vertices
+      // the normalization are conducted in the shader
+      positions: number[];
+      // values of vertices (0 or 1)
+      values: boolean[];
+      // We do not set dupliate values to positions and values to reduce memory.
+      // Instead, we use indices array to declare the order of the vertices.
+      indices: number[];
+    };
+
+    // convert state data to arrays of positions, colors, and indices
+    export const get = (bits: Bits, side: number): Nullable<Arrays> => {
+
+      if ( side === 0 ) return null;
+
+      type Position = { x: number, y: number, value: boolean };
+      type VertexIndex = {
+        leftTop: number; rightTop: number;
+        leftBottom: number; rightBottom: number;
+      };
+
+      const positions: Position[] = [];
+      const indices: VertexIndex[] = [];
+
+      // The index counter
+      let indexCounter = 0;
+
+      // xy coordinate to index
+      const xy2i = (x: number, y: number) => x + y * side;
+
+      // iterate over the cells
+      for (let y=0;y<side;y++) for (let x=0;x<side;x++) {
+
+        const value = bits[xy2i(x,y)];
+
+        // the index for vertices of this cell
+        const index: VertexIndex = {
+          leftTop: -1, rightTop: -1,
+          leftBottom: -1, rightBottom: -1
+        };
+
+        // if upper cell exists, and the value is same as upper
+        // then set the positions of left top and right top vertices
+        if ( y>0 && value === bits[xy2i(x,y-1)] ) {
+          const indexUpper = indices[xy2i(x,y-1)];
+          index.leftTop = indexUpper.leftBottom;
+          index.rightTop = indexUpper.rightBottom;
+        }
+        else {
+          positions.push({ x: x+1, y: y, value });
+          index.rightTop = indexCounter;
+          indexCounter++;
+        }
+
+        // if left cell exists, and the value is same as left
+        // then set the positions of left top and left bottom vertices
+        if ( x>0 && value === bits[xy2i(x-1,y)] ) {
+          const indexLeft = indices[xy2i(x-1,y)];
+          index.leftTop = indexLeft.rightTop;
+          index.leftBottom = indexLeft.rightBottom;
+        }
+        else {
+          positions.push({ x: x, y: y+1, value });
+          index.leftBottom = indexCounter;
+          indexCounter++;
+        }
+
+        // if both of the above conditions do not meet, set the position of left top vertex
+        if (index.leftTop < 0) {
+          positions.push({ x, y, value });
+          index.leftTop = indexCounter;
+          indexCounter++;
+        }
+
+        // set the position of right bottom vertex
+        {
+          positions.push({ x: x+1, y: y+1, value });
+          index.rightBottom = indexCounter;
+          indexCounter++;
+        }
+
+        // add the index of this cell to the indices list
+        indices.push(index);
+
+      }
+
+      // convert arrays to the desired formats
+      const positionsArray = positions.map(
+        ({ x, y }) => [ x, y ] as number[]
+      ).flat();
+      const valuesArray = positions.map(
+        ({ value }) => value
+      );
+      const indicesArray = indices.map(
+        ({ leftTop, rightTop, leftBottom, rightBottom }) => [
+          // constituting two triangles
+          leftTop, rightTop, leftBottom,
+          rightTop, leftBottom, rightBottom
+        ]
+      ).flat();
+
+      return {
+        positions: positionsArray,
+        values: valuesArray,
+        indices: indicesArray
+      };
+    };
+
+  }
+  export type VerticesArrays = Vertices.Arrays;
+  export const getVertices = Vertices.get;
 
 }
 

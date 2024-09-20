@@ -5,21 +5,14 @@ import { FC, useRef, useState, useEffect } from "react";
 import { AdaptDPR as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { onColor, offColor } from "../utils/consts";
+import { ArrayUtils } from "../utils/utils";
 import { isNil } from "../utils/type_check";
 
 const View: FC<RendererDefs.RendererProps> = (props) => {
 
-  const [device, setDevice] = useState<Nullable<GPUDevice>>(null);
-
+  const [hasDevice, setHasDevice] = useState<boolean>(false);
   const canvasRef = useRef<HTMLCanvasElement|null>(null);
-  const contextRef = useRef<Nullable<GPUCanvasContext>>(null);
-
-  const pipelineRef = useRef<Nullable<GPURenderPipeline>>(null);
-
-  const verticesBufferRef = useRef<Nullable<GPUBuffer>>(null);
-  const sideBufferRef = useRef<Nullable<GPUBuffer>>(null);
-  const colorsBufferRef = useRef<Nullable<GPUBuffer>>(null);
-  const bindGroupRef = useRef<Nullable<GPUBindGroup>>(null);
+  const containerRef = useRef<Container>({...initContainer});
 
   // drawing info
   type Info = {
@@ -33,7 +26,7 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
   // initialize: setup device
   useEffect(() => {
     (async () => {
-      if (!isNil(device)) return;
+      if (hasDevice) return;
 
       const adapter = await navigator.gpu.requestAdapter();
       if (isNil(adapter)) {
@@ -42,41 +35,32 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
       }
 
       // gpu device for rendering
-      const newDevice = await adapter.requestDevice();
-      setDevice(newDevice);
+      const device = await adapter.requestDevice();
+
+      containerRef.current.device = device;
+      setHasDevice(true);
     })();
   }, []);
 
   // initialize: create context, prepare uniform buffers, prepare render pipeline
   useEffect(() => {
-    if (isNil(device)) return;
     const canvas = canvasRef.current;
     if (isNil(canvas)) return;
+    const container = containerRef.current;
 
     // run initialize process
-    const output = procedures.initialize(
-      props.notifyFailure, canvas, device
+    initialize(
+      props.notifyFailure, canvas, container
     );
-    if (isNil(output)) return;
-
-    const {
-      context, sideBuffer, colorsBuffer,
-      bindGroup, pipeline
-    } = output;
-    contextRef.current = context;
-    sideBufferRef.current = sideBuffer;
-    colorsBufferRef.current = colorsBuffer;
-    bindGroupRef.current = bindGroup;
-    pipelineRef.current = pipeline;
 
     // set colors to colors buffer
-    procedures.setColors(device, colorsBuffer);
-  }, [canvasRef.current, device]);
+    writeColorsToBuffer(container);
+  }, [canvasRef.current, hasDevice]);
 
   // window resize receiver
   useEffect(() => {
     const canvas = canvasRef.current;
-    const context = contextRef.current;
+    const { context } = containerRef.current;
     if ( isNil(canvas) || isNil(context) ) return;
 
     const bcr = canvas.getBoundingClientRect();
@@ -97,77 +81,35 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
 
   // side resize receiver
   useEffect(() => {
-    if (isNil(device)) return;
-    const sideBuffer = sideBufferRef.current;
-    if (isNil(sideBuffer)) return;
+    const container = containerRef.current;
+    const { device, sideUnifBuffer } = containerRef.current;
+    if ( isNil(device) || isNil(sideUnifBuffer) ) return;
 
-    procedures.writeSideToBuffer(props.side, device, sideBuffer);
-
-    const verticesBuffer = procedures.createVerticesBufferFromSide(props.side, device);
-    verticesBufferRef.current = verticesBuffer;
+    writeSideToBuffer(props.side, container);
+    createIndicesBuffer(props.side, container);
 
     infoRef.current.side = props.side;
-
-    return () => verticesBuffer.destroy();
   }, [canvasRef.current, props.side]);
 
   // state change receiver
   useEffect(() => {
-    if (isNil(device)) return;
-    const verticesBuffer = verticesBufferRef.current;
-    if (isNil(verticesBuffer)) return;
+    const container = containerRef.current;
 
     // is bits size is apropriate value to side?
     const side = infoRef.current.side;
     if ( side**2 !== props.bits.length || side === 0 ) return;
 
-    procedures.writeBitsToVerticesBuffer(props.bits, side, device, verticesBuffer);
+    prepareVerticesBuffer(props.bits, side, container);
   }, [canvasRef.current, props.bits, props.side]);
 
   // draw
   // called when any of the above changes occured
   useEffect(() => {
-    const context = contextRef.current;
-    if (isNil(context)) return;
-    if (isNil(device)) return;
-    const pipeline = pipelineRef.current;
-    if (isNil(pipeline)) return;
-    const verticesBuffer = verticesBufferRef.current;
-    if (isNil(verticesBuffer)) return;
-    const bindGroup = bindGroupRef.current;
-    if (isNil(bindGroup)) return;
+    const container = containerRef.current;
     const info = infoRef.current;
-
-    if ( infoRef.current.side === 0 ) return;
-
-    const commandBuffer =
-    procedures.recordCommands(device, (commandEncoder) => {
-
-      const textureView = procedures.getCurrentTextureView(context);
-
-      procedures.recordRenderCommands(
-        commandEncoder, textureView, (renderPassEncoder) => {
-
-          // set the shader module with the vertex and fragment info
-          renderPassEncoder.setPipeline(pipeline);
-
-          renderPassEncoder.setBindGroup(0, bindGroup);
-
-          renderPassEncoder.setVertexBuffer(0, verticesBuffer, 0);
-
-          renderPassEncoder.draw(
-            (info.side**2) * 6, 1, 0, 0
-          );
-
-        }
-      );
-
-    });
-
-    // put the buffered commands into the queue of GPU
-    device.queue.submit([commandBuffer]);
+    draw(info.side, container);
   }, [
-    canvasRef.current, device,
+    canvasRef.current,
     props.windowSize,
     props.adaptDevicePixelRatio,
     props.side,
@@ -200,16 +142,18 @@ const shaderSource = `
   @vertex
   fn vertexMain(
     @location(0)
-    coord: vec2<f32>,
+    coord: vec2<u32>,
     @location(1)
-    bit: f32
+    value: u32
   ) -> FragmentData {
     var out: FragmentData;
 
-    let x = coord.x / side *  2.0 - 1.0;
-    let y = coord.y / side * -2.0 + 1.0;
+    let x = f32(coord.x) / side *  2.0 - 1.0;
+    let y = f32(coord.y) / side * -2.0 + 1.0;
     out.position = vec4<f32>(x,y,0.0,1.0);
-    out.color = colors.onColor * bit + colors.offColor * (1.0-bit);
+
+    if value > 0 { out.color = colors.onColor; }
+    else { out.color = colors.offColor; }
 
     return out;
   }
@@ -220,265 +164,353 @@ const shaderSource = `
   }
 `;
 
-// procedures
-namespace procedures {
+type Container = typeof initContainer;
+const initContainer = {
+  device:                null as Nullable<GPUDevice>,
+  context:               null as Nullable<GPUCanvasContext>,
+  pipeline:              null as Nullable<GPURenderPipeline>,
 
-  namespace initializeImpl {
+  sideUnifBuffer:        null as Nullable<GPUBuffer>,
+  colorsUnifBuffer:      null as Nullable<GPUBuffer>,
 
-    type Output = {
-      context: GPUCanvasContext;
-      sideBuffer: GPUBuffer;
-      colorsBuffer: GPUBuffer;
-      bindGroup: GPUBindGroup;
-      pipeline: GPURenderPipeline;
-    };
+  positionsAttribBuffer: null as Nullable<GPUBuffer>,
+  valuesAttribBuffer:    null as Nullable<GPUBuffer>,
+  indicesBuffer:         null as Nullable<GPUBuffer>,
 
-    type InitializeMain = (
-      notifyFailure: (message: string) => void,
-      canvas: HTMLCanvasElement,
-      device: GPUDevice
-    ) => Nullable<Output>;
+  bindGroup:             null as Nullable<GPUBindGroup>,
+};
 
-    export const main: InitializeMain = (notifyFailure, canvas, device) => {
-      // prepare convas context
-      const context = setupContext(canvas, device);
-      if (isNil(context)) {
-        notifyFailure("Failed to create context");
-        return;
-      }
 
-      // create buffers for uniform variables
-      const uniformBuffers = createUniformBuffers(device);
 
-      // define structure and purpose of gpu resources
-      const bindGroupLayout = createBindGroupLayout(device);
+namespace initializeImpl {
 
-      // attach buffers to bind group
-      const bindGroup = createBindGroup(device, bindGroupLayout, uniformBuffers);
+  export const main = (
+    notifyFailure: (message: string) => void,
+    canvas: HTMLCanvasElement,
+    container: Container
+  ) => {
+    const device = container.device;
+    if (isNil(device)) return;
 
-      // determines bind group to the pipeline
-      const pipelineLayout = createPipelineLayout(device, bindGroupLayout);
-
-      // executable shader module (program)
-      const shaderModule = createShaderModule(device, shaderSource);
-
-      // controlling vertex and fragment stages on each rendering, with given buffers layout
-      const pipeline = createRenderPipeline(device, shaderModule, pipelineLayout);
-
-      return {
-        context,
-        sideBuffer: uniformBuffers.side,
-        colorsBuffer: uniformBuffers.colors,
-        bindGroup, pipeline
-      };
-    };
-
-    type UniformBuffers = {
-      side: GPUBuffer;
-      colors: GPUBuffer;
+    // prepare convas context
+    const context = setupContext(canvas, device);
+    if (isNil(context)) {
+      notifyFailure("Failed to create context");
+      return;
     }
+    container.context = context;
 
-    type SetupContext = (canvas: HTMLCanvasElement, device: GPUDevice) => GPUCanvasContext | null;
-    const setupContext: SetupContext = (canvas, device) => {
-      const context = canvas.getContext("webgpu");
-      if (isNil(context)) return null;
+    // create buffers for uniform variables
+    const uniformBuffers = createUniformBuffers(device);
+    container.sideUnifBuffer = uniformBuffers.side;
+    container.colorsUnifBuffer = uniformBuffers.colors;
 
-      context.configure({
-        device: device,
-        format: navigator.gpu.getPreferredCanvasFormat()
-      });
+    // define structure and purpose of gpu resources
+    const bindGroupLayout = createBindGroupLayout(device);
 
-      return context;
-    };
+    // attach buffers to bind group
+    container.bindGroup = createBindGroup(device, bindGroupLayout, uniformBuffers);
 
-    type UniformBuffersFn = (device: GPUDevice) => UniformBuffers;
-    const createUniformBuffers: UniformBuffersFn = (device) => (
-      {
-        side: device.createBuffer({
-          size: 4, // size of u32
-          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        }),
-        colors: device.createBuffer({
-          size: 4 * 4 * 2, // size of u32 * # of vector components * # of vectors
-          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        })
-      }
-    );
+    // determines bind group to the pipeline
+    const pipelineLayout = createPipelineLayout(device, bindGroupLayout);
 
-    type BindGroupLayoutFn = (device: GPUDevice) => GPUBindGroupLayout;
-    const createBindGroupLayout: BindGroupLayoutFn = (device) => (
-      device.createBindGroupLayout({
-        entries: [
-          {
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" }
-          },
-          {
-            binding: 1,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" }
-          }
-        ]
-      })
-    );
+    // executable shader module (program)
+    const shaderModule = createShaderModule(device, shaderSource);
 
-    type BindGroupFn = (device: GPUDevice, layout: GPUBindGroupLayout, buffers: UniformBuffers) => GPUBindGroup;
-    const createBindGroup: BindGroupFn = (device, bindGroupLayout, uniformBuffers) => (
-      device.createBindGroup({
-        layout: bindGroupLayout,
-        entries: [
-          {
-            binding: 0,
-            resource: { buffer: uniformBuffers.side }
-          },
-          {
-            binding: 1,
-            resource: { buffer: uniformBuffers.colors }
-          }
-        ]
-      })
-    );
+    // controlling vertex and fragment stages on each rendering, with given buffers layout
+    container.pipeline = createRenderPipeline(device, shaderModule, pipelineLayout);
+  };
 
-    type PipelineLayoutFn = (
-      device: GPUDevice,
-      bindGroupLayout: GPUBindGroupLayout
-    ) => GPUPipelineLayout;
-    const createPipelineLayout: PipelineLayoutFn = (device, bindGroupLayout) => (
-      device.createPipelineLayout({
-        bindGroupLayouts: [bindGroupLayout]
-      })
-    );
-
-    type ShaderModuleFn = (device: GPUDevice, code: string) => GPUShaderModule;
-    const createShaderModule: ShaderModuleFn = (device, wgslCode) => (
-      device.createShaderModule({
-        code: wgslCode
-      })
-    );
-
-    type RenderPipelineFn = (
-      device: GPUDevice,
-      module: GPUShaderModule,
-      layout: GPUPipelineLayout
-    ) => GPURenderPipeline;
-    const createRenderPipeline: RenderPipelineFn = (device, shaderModule, pipelineLayout) => (
-      device.createRenderPipeline({
-        // ref: https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createRenderPipeline#parameters
-        vertex: {
-          module: shaderModule,
-          entryPoint: "vertexMain",
-          buffers: [
-            {
-              arrayStride: 3*4,
-              attributes: [
-                {
-                  format: "float32x2",
-                  offset: 0,
-                  shaderLocation: 0
-                },
-                {
-                  format: "float32",
-                  offset: 2*4,
-                  shaderLocation: 1
-                }
-              ]
-            }
-          ]
-        },
-        fragment: {
-          module: shaderModule,
-          entryPoint: "fragmentMain",
-          targets: [
-            {
-              // 1*src + 0*dst
-              blend: {
-                alpha: {
-                  srcFactor: "one",
-                  dstFactor: "zero",
-                  operation: "add"
-                },
-                color: {
-                  srcFactor: "one",
-                  dstFactor: "zero",
-                  operation: "add"
-                }
-              },
-              // ref: https://gpuweb.github.io/gpuweb/#texture-formats
-              // unorm: unsigned normalized
-              // b,g,r,a each has 8bit and thus whole value is 32bit
-              format: "bgra8unorm",
-              // color mask
-              writeMask: GPUColorWrite.ALL
-            }
-          ]
-        },
-        primitive: {
-          // Each triplet of vertices represents a triangle.
-          topology: "triangle-list"
-        },
-        layout: pipelineLayout
-      })
-    );
+  type UniformBuffers = {
+    side: GPUBuffer;
+    colors: GPUBuffer;
   }
-  export const initialize = initializeImpl.main;
 
-  type SetColors = (device: GPUDevice, buffer: GPUBuffer) => void;
-  export const setColors: SetColors = (device, colorsBuffer) => {
-    const arrayBuffer = new ArrayBuffer(4 * 4 * 2);
+  type SetupContext = (
+    canvas: HTMLCanvasElement,
+    device: GPUDevice
+  ) => GPUCanvasContext | null;
+  const setupContext: SetupContext = (canvas, device) => {
+    const context = canvas.getContext("webgpu");
+    if (isNil(context)) return null;
 
-    ([ [onColor, 0], [offColor, 16] ] as [Uint8ClampedArray, number][])
-    .map(([color,stride]) => {
-      const view = new Float32Array(arrayBuffer, stride, 4);
-      view.set(
-        Array.from(color).map(value => value/255)
-      );
+    context.configure({
+      device: device,
+      format: navigator.gpu.getPreferredCanvasFormat()
     });
 
-    device.queue.writeBuffer(colorsBuffer, 0, arrayBuffer);
+    return context;
   };
 
-  type WriteSideToBuffer = (side: number, device: GPUDevice, buffer: GPUBuffer) => void;
-  export const writeSideToBuffer: WriteSideToBuffer = (side, device, buffer) => {
-    const arrayBuffer = new ArrayBuffer(4);
-    const dataView = new DataView(arrayBuffer);
-    dataView.setFloat32(0, side, true);
+  type UniformBuffersFn = (device: GPUDevice) => UniformBuffers;
+  const createUniformBuffers: UniformBuffersFn = (device) => (
+    {
+      side: device.createBuffer({
+        size: Float32Array.BYTES_PER_ELEMENT,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+      }),
+      colors: device.createBuffer({
+        size: Float32Array.BYTES_PER_ELEMENT * 4 * 2,
+        // size of f32 * # of vector components * # of vectors
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+      })
+    }
+  );
 
-    device.queue.writeBuffer(buffer, 0, arrayBuffer);
-  };
-
-  type CreateVerticesBufferFromSide = (side: number, device: GPUDevice) => GPUBuffer;
-  export const createVerticesBufferFromSide: CreateVerticesBufferFromSide = (side, device) => (
-    device.createBuffer({
-      // # of cells * # of vertices in a cell * (x,y,value) * size of float32
-      size: (side**2) * 6 * 3 * 4,
-      // ref: https://developer.mozilla.org/en-US/docs/Web/API/GPUBuffer/usage#value
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  type BindGroupLayoutFn = (device: GPUDevice) => GPUBindGroupLayout;
+  const createBindGroupLayout: BindGroupLayoutFn = (device) => (
+    device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX,
+          buffer: { type: "uniform" }
+        },
+        {
+          binding: 1,
+          visibility: GPUShaderStage.VERTEX,
+          buffer: { type: "uniform" }
+        }
+      ]
     })
   );
 
-  type WriteBitsToVerticesBuffer = (bits: Bits, side: number, device: GPUDevice, buffer: GPUBuffer) => void;
-  export const writeBitsToVerticesBuffer: WriteBitsToVerticesBuffer = (bits, side, device, verticesBuffer) => {
-    const verticesArray = new Float32Array(
-      bits.map((value, idx) => {
-        const x = idx % side;
-        const y = Math.floor( idx / side );
+  type BindGroupFn = (device: GPUDevice, layout: GPUBindGroupLayout, buffers: UniformBuffers) => GPUBindGroup;
+  const createBindGroup: BindGroupFn = (device, bindGroupLayout, uniformBuffers) => (
+    device.createBindGroup({
+      layout: bindGroupLayout,
+      entries: [
+        {
+          binding: 0,
+          resource: { buffer: uniformBuffers.side }
+        },
+        {
+          binding: 1,
+          resource: { buffer: uniformBuffers.colors }
+        }
+      ]
+    })
+  );
 
-        return verticesInCell.map(({ x: dx, y: dy }) => ([
-          x + dx, y + dy,
-          value ? 1 : 0
-        ])).flat();
-      }).flat()
-    );
+  type PipelineLayoutFn = (
+    device: GPUDevice,
+    bindGroupLayout: GPUBindGroupLayout
+  ) => GPUPipelineLayout;
+  const createPipelineLayout: PipelineLayoutFn = (device, bindGroupLayout) => (
+    device.createPipelineLayout({
+      bindGroupLayouts: [bindGroupLayout]
+    })
+  );
 
-    device.queue.writeBuffer(
-      verticesBuffer, 0,
-      verticesArray, 0, verticesArray.length
+  type ShaderModuleFn = (device: GPUDevice, code: string) => GPUShaderModule;
+  const createShaderModule: ShaderModuleFn = (device, wgslCode) => (
+    device.createShaderModule({
+      code: wgslCode
+    })
+  );
+
+  type RenderPipelineFn = (
+    device: GPUDevice,
+    module: GPUShaderModule,
+    layout: GPUPipelineLayout
+  ) => GPURenderPipeline;
+  const createRenderPipeline: RenderPipelineFn = (device, shaderModule, pipelineLayout) => (
+    device.createRenderPipeline({
+      // ref: https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createRenderPipeline#parameters
+      vertex: {
+        module: shaderModule,
+        entryPoint: "vertexMain",
+        buffers: [
+          {
+            arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
+            attributes: [
+              {
+                format: "uint32x2",
+                offset: 0,
+                shaderLocation: 0
+              }
+            ]
+          },
+          {
+            arrayStride: Float32Array.BYTES_PER_ELEMENT,
+            attributes: [
+              {
+                format: "uint32",
+                offset: 0,
+                shaderLocation: 1
+              }
+            ]
+          }
+        ]
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: "fragmentMain",
+        targets: [
+          {
+            // 1*src + 0*dst
+            blend: {
+              alpha: {
+                srcFactor: "one",
+                dstFactor: "zero",
+                operation: "add"
+              },
+              color: {
+                srcFactor: "one",
+                dstFactor: "zero",
+                operation: "add"
+              }
+            },
+            // ref: https://gpuweb.github.io/gpuweb/#texture-formats
+            // unorm: unsigned normalized
+            // b,g,r,a each has 8bit and thus whole value is 32bit
+            format: "bgra8unorm",
+            // color mask
+            writeMask: GPUColorWrite.ALL
+          }
+        ]
+      },
+      primitive: {
+        // Each triplet of vertices represents a triangle.
+        topology: "triangle-list"
+      },
+      layout: pipelineLayout
+    })
+  );
+}
+const initialize = initializeImpl.main;
+
+const writeColorsToBuffer = (container: Container) => {
+  const { device, colorsUnifBuffer } = container;
+  if ( isNil(device) || isNil(colorsUnifBuffer) ) return;
+
+  const arrayBuffer = new ArrayBuffer(4 * 4 * 2);
+
+  ([ [onColor, 0], [offColor, 16] ] as [Uint8ClampedArray, number][])
+  .map(([color,stride]) => {
+    const view = new Float32Array(arrayBuffer, stride, 4);
+    view.set(
+      Array.from(color).map(value => value/255)
     );
+  });
+
+  device.queue.writeBuffer(colorsUnifBuffer, 0, arrayBuffer);
+};
+
+const writeSideToBuffer = (side: number, container: Container) => {
+  const { device, sideUnifBuffer } = container;
+  if ( isNil(device) || isNil(sideUnifBuffer) ) return;
+
+  const arrayBuffer = new ArrayBuffer(4);
+  const dataView = new DataView(arrayBuffer);
+  dataView.setFloat32(0, side, true);
+
+  device.queue.writeBuffer(sideUnifBuffer, 0, arrayBuffer);
+};
+
+const createIndicesBuffer = (side: number, container: Container) => {
+  const {
+    device, indicesBuffer: oldIndicesBuffer
+  } = container;
+  if (isNil(device)) return;
+  if (!isNil(oldIndicesBuffer)) oldIndicesBuffer.destroy();
+
+  const indicesCount = (side**2) * 6;
+
+  container.indicesBuffer = device.createBuffer({
+    size: indicesCount * Uint16Array.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST
+  });
+};
+
+const prepareVerticesBuffer = (
+  bits: Bits, side: number, container: Container
+) => {
+  const {
+    device, indicesBuffer,
+    positionsAttribBuffer: oldPositionsBuffer,
+    valuesAttribBuffer: oldValuesBuffer
+  } = container;
+  if ( isNil(device) || isNil(indicesBuffer) ) return;
+  if (!isNil(oldPositionsBuffer)) oldPositionsBuffer.destroy();
+  if (!isNil(oldValuesBuffer)) oldValuesBuffer.destroy();
+
+  const arrays = ArrayUtils.getVertices(bits, side);
+  if (isNil(arrays)) return;
+  const { positions, values, indices } = arrays;
+
+  const positionsView = new Uint32Array(positions);
+  const positionsAttribBuffer = device.createBuffer({
+    size: positionsView.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  });
+  device.queue.writeBuffer(
+    positionsAttribBuffer, 0,
+    positionsView, 0, positions.length
+  );
+  container.positionsAttribBuffer = positionsAttribBuffer;
+
+  const valuesView = new Uint32Array(values.map(value => value ? 1 : 0));
+  const valuesAttribBuffer = device.createBuffer({
+    size: valuesView.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  });
+  device.queue.writeBuffer(
+    valuesAttribBuffer, 0,
+    valuesView, 0, values.length
+  );
+  container.valuesAttribBuffer = valuesAttribBuffer;
+
+  const indicesView = new Uint16Array(indices);
+  device.queue.writeBuffer(
+    indicesBuffer, 0,
+    indicesView, 0, indices.length
+  );
+};
+
+namespace drawImpl {
+
+  export const main = (side: number, container: Container) => {
+    const { device, context, pipeline, bindGroup, positionsAttribBuffer, valuesAttribBuffer, indicesBuffer } = container;
+    if ( isNil(device) || isNil(context) || isNil(pipeline) || isNil(bindGroup) || isNil(positionsAttribBuffer) || isNil(valuesAttribBuffer) || isNil(indicesBuffer) ) return;
+
+    if (side === 0) return;
+    const indicesCount = (side**2) * 6;
+
+    const commandBuffer =
+    recordCommands(device, (commandEncoder) => {
+
+      const textureView = getCurrentTextureView(context);
+
+      recordRenderCommands(
+        commandEncoder, textureView, (renderPassEncoder) => {
+
+          // set the shader module with the vertex and fragment info
+          renderPassEncoder.setPipeline(pipeline);
+
+          renderPassEncoder.setBindGroup(0, bindGroup);
+
+          renderPassEncoder.setVertexBuffer(0, positionsAttribBuffer, 0);
+          renderPassEncoder.setVertexBuffer(1, valuesAttribBuffer, 0);
+
+          renderPassEncoder.setIndexBuffer(indicesBuffer, "uint16");
+
+          renderPassEncoder.drawIndexed(
+            indicesCount, 1,
+            0, 0, 0
+          );
+
+        }
+      );
+
+    });
+
+    // put the buffered commands into the queue of GPU
+    device.queue.submit([commandBuffer]);
   };
 
   type GetCurrentTextureView = (context: GPUCanvasContext) => GPUTextureView;
-  export const getCurrentTextureView: GetCurrentTextureView = (context) => {
+  const getCurrentTextureView: GetCurrentTextureView = (context) => {
     // a texture of color attachment as an output of rendering
     const texture = context.getCurrentTexture();
 
@@ -491,7 +523,7 @@ namespace procedures {
     device: GPUDevice,
     func: (encoder: GPUCommandEncoder) => void
   ) => GPUCommandBuffer;
-  export const recordCommands: RecordCommands = (device, func) => {
+  const recordCommands: RecordCommands = (device, func) => {
     // an object to encode (create) commands sent to GPU
     const commandEncoder = device.createCommandEncoder();
 
@@ -509,7 +541,7 @@ namespace procedures {
     view: GPUTextureView,
     func: (encoder: GPURenderPassEncoder) => void
   ) => void;
-  export const recordRenderCommands: RecordRenderCommands = (commandEncoder, textureView, func) => {
+  const recordRenderCommands: RecordRenderCommands = (commandEncoder, textureView, func) => {
     // create GPU commands of especially rendering
     // the commands are part of the whole commands in GPUCommandEncoder
     // commands are recorded in the called order
@@ -535,11 +567,9 @@ namespace procedures {
   };
 
 }
+const draw = drawImpl.main;
 
-type Point = { x: number; y: number; };
-const verticesInCell: Point[] = [
-  { x: 0, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 0 }, { x: 1, y: 1 }
-];
+
 
 export const renderer : RendererDefs.Renderer = {
   name: "WebGPU",
