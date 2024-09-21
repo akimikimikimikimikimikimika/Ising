@@ -1,112 +1,20 @@
-import { FC, useState, useRef, useCallback, useEffect } from "react";
-import { lists as renderers } from "../renderer_utils/list";
-import { Parameters, RenderOptions } from "../utils/params";
-import { isNil } from "../utils/type_check";
-import "./Menu.css";
-
-
-type MenuProps = Parameters & RenderOptions;
-
-export const Menu: FC<MenuProps> = (props) => {
-
-  const rendererOptions = (() => {
-    const renderer = renderers.find(renderer => renderer.name === props.current);
-    if (isNil(renderer)) return <></>;
-    const Options = renderer?.menu;
-    return isNil(Options) ? <></> : <>
-      <Caption title={`${renderer.name} Option`} />
-      <Options {...props} />
-    </>;
-  })();
-
-  return (
-    <div id="menu">
-      <Caption title="Parameters" />
-      <Range
-        name="logT"
-        min={-2} max={+2} step={0.5}
-        value={props.temp} setValue={props.setTemp}
-      />
-      <Range
-        name="H"
-        min={-6} max={+6} step={2}
-        value={props.magField} setValue={props.setMagField}
-      />
-      <Range
-        name="J"
-        min={-1} max={+1} step={1}
-        value={props.interaction} setValue={props.setInteraction}
-      />
-      <Range
-        name="pixels"
-        min={2} max={150} step={1}
-        value={props.pixels} setValue={props.setPixels}
-      />
-      <Caption title="Controls" />
-      <Chooser
-        name="Updating"
-        mode="segmented"
-        options={[
-          { value: true , label: "On"  },
-          { value: false, label: "Off" }
-        ]}
-        value={props.playing}
-        setValue={props.setPlaying}
-      />
-      <Range
-        name="Minimum Updating Interval"
-        min={100} max={3000} step={100}
-        formatter={value => (
-          value % 1000 === 0 ? `${value/1000}.0 sec` : `${value/1000} sec`
-        )}
-        value={props.interval} setValue={props.setInterval}
-      />
-      <Caption title="Renderer" />
-      <Chooser
-        name="Current Renderer"
-        mode="selector"
-        options={renderers.filter(
-          renderer => renderer.isActive
-        ).map( renderer => renderer.name )}
-        value={props.current}
-        setValue={props.setCurrent}
-      />
-      {rendererOptions}
-      <Caption title="Misc" />
-      <Chooser
-        name="RNG"
-        mode="segmented"
-        options={[
-          { value: "normal", label: "Normal" },
-          { value: "crypto", label: "Crypto" }
-        ]}
-        value={props.rng}
-        setValue={props.setRng}
-      />
-      <Chooser
-        name="Theme"
-        mode="segmented"
-        options={[
-          { value: "theme-auto" , label: "Auto"  },
-          { value: "theme-light", label: "Light" },
-          { value: "theme-dark" , label: "Dark"  }
-        ]}
-        value={props.theme}
-        setValue={props.setTheme}
-      />
-    </div>
-  );
-};
+import { FC, useState, useRef, useCallback, useEffect, ReactNode } from "react";
+import { isNil } from "../../utils/type_check";
 
 
 
 type CaptionProps = {
   title: string;
+  hidden?: boolean;
 }
 
-export const Caption: FC<CaptionProps> = (props) => (
-  <div className="caption">{props.title}</div>
-);
+export const Caption: FC<CaptionProps> = (props) => {
+  if (props.hidden ?? false) return <></>;
+
+  return (
+    <div className="caption">{props.title}</div>
+  );
+};
 
 
 
@@ -118,6 +26,7 @@ type RangeProps = {
   min?: Nullable<number>;
   max?: Nullable<number>;
   step?: Nullable<number>;
+  hidden?: boolean;
 };
 type Formatter = (value: number) => string;
 
@@ -131,19 +40,29 @@ export const Range: FC<RangeProps> = (props) => {
   );
 
   const inputRef = useRef<HTMLInputElement|null>(null);
+  const getValue = useCallback(() => {
+    if (isNil(inputRef.current)) return null;
+    const valueStr = inputRef.current.value;
+    return parseFloat(valueStr);
+  }, []);
 
   const [valueStr, setValueStr] = useState(formatter(value));
 
-  type OnChange = React.PointerEventHandler<HTMLInputElement>;
+  if (props.hidden ?? false) return <></>;
+
+  type OnChange = React.ChangeEventHandler<HTMLInputElement>;
   const handleChange: OnChange = event => {
-    if (isNil(inputRef.current)) return;
-
-    const valueStr = inputRef.current.value;
-    const value = parseFloat(valueStr);
-
-    setValue(value);
+    const value = getValue();
+    if (isNil(value)) return;
     setValueStr(formatter(value));
+    event.stopPropagation();
+  };
 
+  type OnPointerUp = React.PointerEventHandler<HTMLInputElement>;
+  const handlePointerUp: OnPointerUp = event => {
+    const value = getValue();
+    if (isNil(value)) return;
+    setValue(value);
     event.stopPropagation();
   };
 
@@ -157,7 +76,8 @@ export const Range: FC<RangeProps> = (props) => {
           max={max ?? undefined}
           step={step ?? undefined}
           defaultValue={value}
-          onPointerUp={handleChange}
+          onChange={handleChange}
+          onPointerUp={handlePointerUp}
         />
       </div>
       <div className="value">{valueStr}</div>
@@ -173,9 +93,13 @@ type ChooserProps<T> = {
   options: ({ value: T, label: string } | string)[];
   value?: Nullable<T>;
   setValue: StateSetter<T>;
+  hidden?: boolean;
 };
+type ChooserFC = <T,>(props: ChooserProps<T>) => ReactNode;
 
-export const Chooser = <T,>(props: ChooserProps<T>) => {
+export const Chooser: ChooserFC = (props) => {
+  if (props.hidden ?? false) return <></>;
+
   switch (props.mode) {
     case "selector":
       return <Selector {...props} />;
@@ -184,7 +108,7 @@ export const Chooser = <T,>(props: ChooserProps<T>) => {
   }
 };
 
-const Selector = <T,>(props: ChooserProps<T>) => {
+const Selector: ChooserFC = <T,>(props: ChooserProps<T>) => {
   const { name, options, value, setValue } = props;
 
   const selectRef = useRef<HTMLSelectElement|null>(null);
@@ -236,7 +160,7 @@ const Selector = <T,>(props: ChooserProps<T>) => {
       <div className="value">
         <select
           ref={selectRef}
-          defaultValue={index}
+          value={index}
           defaultChecked={!isNil(value)}
           onChange={handleChange}
         >{options.map((item,idx) => {
@@ -254,7 +178,7 @@ const Selector = <T,>(props: ChooserProps<T>) => {
   );
 };
 
-const Segmented = <T,>(props: ChooserProps<T>) => {
+const Segmented: ChooserFC = <T,>(props: ChooserProps<T>) => {
   const { name, options, value, setValue } = props;
 
   return (
@@ -293,10 +217,13 @@ type ButtonProps = {
   title: string;
   checked: boolean;
   disabled?: boolean;
+  hidden?: boolean;
   onClick: () => void;
 };
 
 export const Button: FC<ButtonProps> = (props) => {
+
+  if (props.hidden ?? false) return <></>;
 
   let active = false;
 
@@ -315,7 +242,7 @@ export const Button: FC<ButtonProps> = (props) => {
     event.stopPropagation();
   };
 
-  const cls = props.checked ? "list checked" : "list";
+  const cls = props.checked ? "plain checked" : "plain unchecked";
 
   return (
     <div
@@ -332,4 +259,21 @@ export const Button: FC<ButtonProps> = (props) => {
     </div>
   );
 
+};
+
+type NameValueProps<T> = {
+  name: string;
+  value: T;
+  formatter?: (value: T) => string;
+};
+type NameValueFC = <T,>(props: NameValueProps<T>) => ReactNode;
+
+export const NameValue: NameValueFC = (props) => {
+  const formatter = props.formatter ?? (value => `${value}`);
+  return (
+    <div className="plain name-value">
+      <div className="name">{props.name}</div>
+      <div className="value">{formatter(props.value)}</div>
+    </div>
+  );
 };

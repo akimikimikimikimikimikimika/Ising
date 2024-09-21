@@ -193,38 +193,47 @@
 	border-right: none;
 }
 
-.list, .list * {
+.plain, .plain * {
 	cursor: pointer;
 }
 
-.list > * {
+.plain > * {
 	position: absolute;
 	display: flex;
+	flex-direction: row;
 	box-sizing: border-box;
 	top: 0;
 	bottom: 0;
 	align-items: center;
 }
 
-.list.checked > * {
+.plain.checked > * {
 	color: #007aff;
 }
 
-.list > .checkbox {
+.plain > .checkbox {
 	left: 0;
 	width: 40px;
 	justify-content: center;
 }
 
-.list.checked > .checkbox:before {
+.plain.checked > .checkbox:before {
 	content:"✔︎";
 }
 
-.list > .name {
+.plain.unchecked > .name, .plain.checked > .name {
 	padding: 0 10px;
 	left: 40px;
 	right: 0;
 	justify-content: flex-start;
+}
+
+.plain.name-value > .name {
+	left: 20px;
+}
+
+.plain.name-value > .value {
+	right: 20px;
 }
 
 .caption {

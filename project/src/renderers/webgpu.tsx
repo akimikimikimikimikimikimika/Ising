@@ -14,106 +14,70 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
   const canvasRef = useRef<HTMLCanvasElement|null>(null);
   const containerRef = useRef<Container>({...initContainer});
 
-  // drawing info
-  type Info = {
-    width: number, height: number,
-    side: number
-  };
-  const infoRef = useRef<Info>({
-    width: 0, height: 0, side: 0
-  });
-
   // initialize: setup device
   useEffect(() => {
-    (async () => {
-      if (hasDevice) return;
+    const container = containerRef.current;
+    if (hasDevice) return;
 
-      const adapter = await navigator.gpu.requestAdapter();
-      if (isNil(adapter)) {
-        props.notifyFailure("Failed to request GPU adapter");
-        return;
+    setUpDevice(props.notifyFailure)
+    .then(device => {
+      if (!isNil(device)) {
+        container.device = device;
+        setHasDevice(true);
       }
-
-      // gpu device for rendering
-      const device = await adapter.requestDevice();
-
-      containerRef.current.device = device;
-      setHasDevice(true);
-    })();
+      else setHasDevice(false);
+    });
   }, []);
 
-  // initialize: create context, prepare uniform buffers, prepare render pipeline
+  // initialize: all others
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (isNil(canvas)) return;
     const container = containerRef.current;
 
-    // run initialize process
-    initialize(
-      props.notifyFailure, canvas, container
-    );
-
-    // set colors to colors buffer
+    initialize(props.notifyFailure, canvas, container);
     writeColorsToBuffer(container);
   }, [canvasRef.current, hasDevice]);
 
   // window resize receiver
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const { context } = containerRef.current;
-    if ( isNil(canvas) || isNil(context) ) return;
-
-    const bcr = canvas.getBoundingClientRect();
-    const dpr = props.adaptDevicePixelRatio ? window.devicePixelRatio : 1;
-
-    const width = bcr.width * dpr;
-    const height = bcr.height * dpr;
-    canvas.width = width;
-    canvas.height = height;
-
-    infoRef.current.width = width;
-    infoRef.current.height = height;
-  }, [
+  const windowResizeDeps = [
     canvasRef.current,
     props.windowSize,
     props.adaptDevicePixelRatio
-  ]);
+  ];
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+
+    resize(canvas, container, props.adaptDevicePixelRatio);
+  }, windowResizeDeps);
 
   // side resize receiver
+  const sideResizeDeps = [canvasRef.current, props.side];
   useEffect(() => {
     const container = containerRef.current;
-    const { device, sideUnifBuffer } = containerRef.current;
-    if ( isNil(device) || isNil(sideUnifBuffer) ) return;
 
     writeSideToBuffer(props.side, container);
     createIndicesBuffer(props.side, container);
-
-    infoRef.current.side = props.side;
-  }, [canvasRef.current, props.side]);
+  }, sideResizeDeps);
 
   // state change receiver
+  const stateChangeDeps = [canvasRef.current, props.bits, props.side];
   useEffect(() => {
     const container = containerRef.current;
 
-    // is bits size is apropriate value to side?
-    const side = infoRef.current.side;
-    if ( side**2 !== props.bits.length || side === 0 ) return;
-
-    prepareVerticesBuffer(props.bits, side, container);
-  }, [canvasRef.current, props.bits, props.side]);
+    prepareVerticesBuffer(props.bits, props.side, container);
+  }, stateChangeDeps);
 
   // draw
-  // called when any of the above changes occured
+  // called when any of the above receivers triggered
   useEffect(() => {
     const container = containerRef.current;
-    const info = infoRef.current;
-    draw(info.side, container);
+
+    draw(props.side, container);
   }, [
-    canvasRef.current,
-    props.windowSize,
-    props.adaptDevicePixelRatio,
-    props.side,
-    props.bits
+    ...windowResizeDeps,
+    ...sideResizeDeps,
+    ...stateChangeDeps
   ]);
 
   return <canvas className="view" ref={canvasRef} />;
@@ -164,6 +128,7 @@ const shaderSource = `
   }
 `;
 
+type Canvas = HTMLCanvasElement;
 type Container = typeof initContainer;
 const initContainer = {
   device:                null as Nullable<GPUDevice>,
@@ -182,15 +147,36 @@ const initContainer = {
 
 
 
-namespace initializeImpl {
+const setUpDevice = async (
+  notifyFailure: (message: string) => void
+): Promise<Nullable<GPUDevice>> => {
+  // get adapter
+  const adapter = await navigator.gpu.requestAdapter();
+  if (isNil(adapter)) {
+    notifyFailure("Failed to request GPU adapter");
+    return null;
+  }
+
+  // gpu device for rendering
+  try {
+    const device = await adapter.requestDevice();
+    return device;
+  }
+  catch {
+    notifyFailure("Failed to get GPU device");
+    return null;
+  }
+};
+
+namespace Initialize {
 
   export const main = (
     notifyFailure: (message: string) => void,
-    canvas: HTMLCanvasElement,
+    canvas: Nullable<Canvas>,
     container: Container
   ) => {
     const device = container.device;
-    if (isNil(device)) return;
+    if ( isNil(device) || isNil(canvas) ) return;
 
     // prepare convas context
     const context = setupContext(canvas, device);
@@ -378,7 +364,7 @@ namespace initializeImpl {
     })
   );
 }
-const initialize = initializeImpl.main;
+const initialize = Initialize.main;
 
 const writeColorsToBuffer = (container: Container) => {
   const { device, colorsUnifBuffer } = container;
@@ -432,8 +418,12 @@ const prepareVerticesBuffer = (
     valuesAttribBuffer: oldValuesBuffer
   } = container;
   if ( isNil(device) || isNil(indicesBuffer) ) return;
-  if (!isNil(oldPositionsBuffer)) oldPositionsBuffer.destroy();
-  if (!isNil(oldValuesBuffer)) oldValuesBuffer.destroy();
+
+  // is bits size is apropriate value to side?
+  if ( side**2 !== bits.length || side === 0 ) return;
+
+  oldPositionsBuffer?.destroy();
+  oldValuesBuffer?.destroy();
 
   const arrays = ArrayUtils.getVertices(bits, side);
   if (isNil(arrays)) return;
@@ -468,13 +458,31 @@ const prepareVerticesBuffer = (
   );
 };
 
-namespace drawImpl {
+const resize = (
+  canvas: Nullable<Canvas>,
+  container: Container,
+  adaptDevicePixelRatio: boolean
+) => {
+  const { context } = container;
+  if ( isNil(canvas) || isNil(context) ) return;
+
+  const bcr = canvas.getBoundingClientRect();
+  const dpr = adaptDevicePixelRatio ? window.devicePixelRatio : 1;
+
+  const width = bcr.width * dpr;
+  const height = bcr.height * dpr;
+  canvas.width = width;
+  canvas.height = height;
+};
+
+namespace Draw {
 
   export const main = (side: number, container: Container) => {
     const { device, context, pipeline, bindGroup, positionsAttribBuffer, valuesAttribBuffer, indicesBuffer } = container;
-    if ( isNil(device) || isNil(context) || isNil(pipeline) || isNil(bindGroup) || isNil(positionsAttribBuffer) || isNil(valuesAttribBuffer) || isNil(indicesBuffer) ) return;
 
+    if ( isNil(device) || isNil(context) || isNil(pipeline) || isNil(bindGroup) || isNil(positionsAttribBuffer) || isNil(valuesAttribBuffer) || isNil(indicesBuffer) ) return;
     if (side === 0) return;
+
     const indicesCount = (side**2) * 6;
 
     const commandBuffer =
@@ -483,7 +491,8 @@ namespace drawImpl {
       const textureView = getCurrentTextureView(context);
 
       recordRenderCommands(
-        commandEncoder, textureView, (renderPassEncoder) => {
+        commandEncoder, textureView,
+        (renderPassEncoder) => {
 
           // set the shader module with the vertex and fragment info
           renderPassEncoder.setPipeline(pipeline);
@@ -537,7 +546,7 @@ namespace drawImpl {
   };
 
   type RecordRenderCommands = (
-    encoder: GPUCommandEncoder,
+    commandEncoder: GPUCommandEncoder,
     view: GPUTextureView,
     func: (encoder: GPURenderPassEncoder) => void
   ) => void;
@@ -567,7 +576,7 @@ namespace drawImpl {
   };
 
 }
-const draw = drawImpl.main;
+const draw = Draw.main;
 
 
 

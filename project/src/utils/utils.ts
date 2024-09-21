@@ -3,6 +3,7 @@ import { Rng, Bits, Orders } from "./types";
 import { Parameters } from "./params";
 import { isNil } from "./type_check";
 
+// a wrapper of the random number generators
 namespace Random {
 
   const size = 256;
@@ -38,6 +39,7 @@ namespace Random {
 }
 const random = Random.random;
 
+// the state calculation mechanism
 export namespace Calc {
 
   // calculate the new state
@@ -228,6 +230,7 @@ export namespace Calc {
 
 }
 
+// the manager to proceed states with the given interval
 export namespace Runner {
 
   // event timer manager type
@@ -242,48 +245,73 @@ export namespace Runner {
     // stop timer immediately
     pause: () => void;
 
-    // time interval (in milliseconds) between calls
+    // minimum time interval (in milliseconds) between calls
     interval: number;
 
-    // users should not use directly below properties or method
-    intId: Nullable<number>;
-    lastDate: Nullable<Date>;
-    animationFrame: () => void;
+    // statistical information
+
+    // number of animation frames passed before the frame calling the action
+    passedFrames: number | null;
+
+    // the actual time interval (in millsecs) between calls of the action
+    actualInterval: number | null;
 
   }
 
   // create a new runner
   export const makeRunner = (): Runner => {
-    return {
-      action: null,
-      play: function() {
-        if (isNil(this.intId)) this.animationFrame();
-      },
-      pause: function() {
-        if (!isNil(this.intId)) {
-          window.cancelAnimationFrame(this.intId);
+    let intId: Nullable<number> = null;
+    let lastDate: Nullable<number> = null;
+    let frameCounter: number = 0;
+
+    const animationFrame = () => {
+      const date = performance.now();
+
+      if (!isNil(lastDate)) {
+        const duration = date - lastDate;
+        frameCounter++;
+        if (duration >= runner.interval) {
+          runner.actualInterval = duration;
+          runner.passedFrames = frameCounter;
+          frameCounter = 0;
+          lastDate = date;
+          runner.action?.();
         }
-        this.intId = null;
+      }
+      else {
+        lastDate = date;
+        frameCounter = 0;
+      }
+
+      intId = window.requestAnimationFrame(
+        () => animationFrame()
+      );
+    };
+
+    const runner: Runner = {
+      action: null,
+      play: () => {
+        if (isNil(intId)) animationFrame();
+      },
+      pause: () => {
+        if (!isNil(intId)) {
+          window.cancelAnimationFrame(intId);
+          intId = null;
+          lastDate = null;
+          runner.passedFrames = null;
+          runner.actualInterval = null;
+        }
       },
       interval: 1000,
-      intId: null, lastDate: null,
-      animationFrame: function() {
-        const date = new Date();
-        if (!isNil(this.lastDate)) {
-          const duration = Number(date) - Number(this.lastDate);
-          if (duration >= this.interval) {
-            this.lastDate = date;
-            if (!isNil(this.action)) this.action();
-          }
-        }
-        else this.lastDate = date;
-        this.intId = window.requestAnimationFrame(() => this.animationFrame());
-      }
+      passedFrames: 0,
+      actualInterval: 0
     };
+
+    return runner;
   };
 
   // sleep in the given seconds
-  export const sleep = async (sec:number) => {
+  export const sleep = async (sec: number) => {
     const promise = new Promise<void>((resolve) => {
       setTimeout(() => resolve(undefined), sec*1000);
     });
@@ -292,46 +320,65 @@ export namespace Runner {
 
 }
 
+// utilities to handle array of the states
 export namespace ArrayUtils {
 
-  export type Process = (arg: { x: number, y: number, side: number }) => ({ x: number, y: number });
+  // utilities of reordering bits array
+  namespace Reorder {
 
-  export const processors = {
-    flipX: ( ({ x, y, side }) => ({ x: side - 1 - x, y }) ) as Process,
-    flipY: ( ({ x, y, side }) => ({ x, y: side - 1 - y }) ) as Process,
-    transpose: ( ({ x, y }) => ({ x: y, y: x }) ) as Process,
-    identity: ( ({ x, y }) => ({ x, y }) ) as Process
-  };
+    // the type of a function showing array transforming strategy
+    export type Process = (arg: { x: number, y: number, side: number }) => ({ x: number, y: number });
 
-  export const multiplyProcess = (...processes: Process[]): Process => (
-    ({ x: inputX, y: inputY, side }) => {
-      let [x,y] = [inputX,inputY];
-      for (const p of processes) {
-        const { x: tx, y: ty } = p({ x, y, side });
-        x = tx; y = ty;
+    // predefined processors
+    export const processors = {
+      flipX: ( ({ x, y, side }) => ({ x: side - 1 - x, y }) ) as Process,
+      flipY: ( ({ x, y, side }) => ({ x, y: side - 1 - y }) ) as Process,
+      transpose: ( ({ x, y }) => ({ x: y, y: x }) ) as Process,
+      identity: ( ({ x, y }) => ({ x, y }) ) as Process
+    };
+
+    // create a processor by multiplying existing processors
+    export const multiplyProcess = (...processes: Process[]): Process => (
+      ({ x: inputX, y: inputY, side }) => {
+        let [x,y] = [inputX,inputY];
+        for (const p of processes) {
+          const { x: tx, y: ty } = p({ x, y, side });
+          x = tx; y = ty;
+        }
+        return { x, y };
       }
-      return { x, y };
-    }
-  );
+    );
 
-  export const performProcess = (bits: Bits, process: Process): Bits => {
-    const side = Math.round(Math.sqrt(bits.length));
-    return Array.from({ length: bits.length },(_,idx) => {
-      const inputX = idx % side;
-      const inputY = Math.floor( idx / side );
-      const { x, y } = process({ x: inputX, y: inputY, side });
-      return bits[ x + y * side ];
-    });
-  };
+    // reordering bits with the given strategy function
+    export const performProcess = (bits: Bits, process: Process): Bits => {
+      const side = Math.round(Math.sqrt(bits.length));
+      return Array.from({ length: bits.length },(_,idx) => {
+        const inputX = idx % side;
+        const inputY = Math.floor( idx / side );
+        const { x, y } = process({ x: inputX, y: inputY, side });
+        return bits[ x + y * side ];
+      });
+    };
 
-  export const transpose =
-    (bits: Bits): Bits => performProcess(bits, processors.transpose);
+    // transpose x-axis and y-axis of bits
+    export const transpose =
+      (bits: Bits): Bits => performProcess(bits, processors.transpose);
 
+  }
+  export type Process = Reorder.Process;
+  export const processors = Reorder.processors;
+  export const multiplyProcess = Reorder.multiplyProcess;
+  export const performProcess = Reorder.performProcess;
+  export const transpose = Reorder.transpose;
+
+  // create the nested array from the given 1-dim array
   export const nested = <T,>(arr1d: T[]): T[][] => {
     const side = Math.round(Math.sqrt(arr1d.length));
     return Array.from({ length: side }, (_,idx) => arr1d.slice(idx*side,(idx+1)*side));
   };
 
+  // the utility of get the majority state and the position of minorities
+  // This is used in renderers with the minimized option
   namespace Minimize {
 
     type Cell = { x: number, y: number };
@@ -390,6 +437,8 @@ export namespace ArrayUtils {
   }
   export const minimize = Minimize.minimize;
 
+  // the utility of get coordinates to draw states as polygons
+  // This is used in renderers with polygon drawing
   namespace Polygon {
 
     type Point = { x: number, y: number };
@@ -444,6 +493,8 @@ export namespace ArrayUtils {
   }
   export const getPolygonPoints = Polygon.getPolygonPoints;
 
+  // the utility of get the stop info (position, state) of a linear gradient
+  // This is used in renderers that represent rows as linear gradients
   namespace StopInfo {
 
     type Stop = { begin: number; end: number; value: boolean; };
@@ -467,6 +518,8 @@ export namespace ArrayUtils {
   }
   export const makeStops = StopInfo.makeStops;
 
+  // the utility of get the vertices info (position, state) and indices
+  // This is used in WebGL and WebGPU
   namespace Vertices {
 
     export type Arrays = {

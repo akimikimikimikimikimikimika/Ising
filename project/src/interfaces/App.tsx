@@ -1,27 +1,15 @@
 import { FC, useEffect } from "react";
-import { Container } from "./View";
-import { Menu } from "./Menu";
-import { lists as renderers } from "../renderer_utils/list";
-import { initParams, initRenderOptions } from "../utils/params";
-import { isNil } from "../utils/type_check";
+import { Container } from "./View/View";
+import { Menu } from "./Menu/Menu";
+import { initParams, initControl, initInfo, initRenderOptions } from "../utils/params";
 import "./App.css";
 
 export const App: FC = () => {
 
   const params = initParams();
+  const control = initControl();
+  const info = initInfo();
   const renderOptions = initRenderOptions();
-
-  useEffect(
-    () => {
-      const found = renderers.find(
-        (renderer) => renderer.isActive
-      );
-      if (isNil(found)) throw Error("No renderer is available in this browser");
-      renderOptions.setCurrent(found.name);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
 
   useEffect(() => {
     document.documentElement.className = params.theme;
@@ -30,10 +18,14 @@ export const App: FC = () => {
   return <>
     <Container
       {...params}
+      {...control}
+      {...info}
       {...renderOptions}
     />
     <Menu
       {...params}
+      {...control}
+      {...info}
       {...renderOptions}
     />
   </>;

@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Chooser, Range } from "../interfaces/Menu";
+import { Chooser, Range } from "../interfaces/Menu/RowItem";
 import { RenderOptions } from "../utils/params";
 
 export const CanvasMenu: FC<RenderOptions> = (props) => ( <>

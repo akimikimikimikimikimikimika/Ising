@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { FC, useRef, useEffect, useCallback } from "react";
+import { FC, useRef, useEffect } from "react";
 import { AdaptDPR as Menu } from "../renderer_utils/MenuOptions";
-import { RendererDefs } from "../utils/types";
+import { Bits, RendererDefs } from "../utils/types";
 import { onColor, offColor } from "../utils/consts";
 import { ArrayUtils } from "../utils/utils";
 import { isNil } from "../utils/type_check";
@@ -40,34 +40,38 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
     varsRef.current = initialize(context, props.notifyFailure);
   }, [contextRef.current]);
 
-  // resize receiver
+  // window resize receiver
+  const windowResizeDeps = [
+    canvasRef.current,
+    props.windowSize,
+    props.adaptDevicePixelRatio
+  ];
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = contextRef.current;
     if ( isNil(canvas) || isNil(context) ) return;
 
     resize(canvas, context, props.adaptDevicePixelRatio);
-    draw();
-  }, [canvasRef.current, props.windowSize, props.adaptDevicePixelRatio]);
+  }, windowResizeDeps);
 
   // state change receiver
+  const stateChangeDeps = [canvasRef.current, props.bits, props.side];
   useEffect(() => {
-    const arrays = ArrayUtils.getVertices(props.bits, props.side);
+    const arrays = changeArrays(props.bits, props.side);
     if (isNil(arrays)) return;
     arraysRef.current = arrays;
+  }, stateChangeDeps);
 
-    draw();
-  }, [props.bits]);
-
-  // draw function
-  const draw = useCallback(() => {
+  // draw
+  // called when any of the above receivers triggered
+  useEffect(() => {
     const context = contextRef.current;
     const vars = varsRef.current;
     const arrays = arraysRef.current;
     if ( isNil(context) || isNil(vars) || isNil(arrays) ) return;
 
-    Draw.main(context, vars, arrays, props.side);
-  }, [props.side]);
+    draw(context, vars, arrays, props.side);
+  }, [...windowResizeDeps, ...stateChangeDeps]);
 
   return <canvas className="view" ref={canvasRef} />;
 };
@@ -155,7 +159,7 @@ type ErrFunc = (message?:string) => void;
 
 
 // a routine when it is being initialized
-export const initialize = (
+const initialize = (
   context: Context,
   errorReporter: ErrFunc
 ): Nullable<Variables> => {
@@ -275,7 +279,7 @@ namespace Initialize {
 }
 
 // a routine when it is being resized
-export const resize = (
+const resize = (
   canvas: Canvas, context: Context,
   adaptDevicePixelRatio: boolean
 ) => {
@@ -288,6 +292,16 @@ export const resize = (
   canvas.height = height;
 
   context.viewport(0,0,width,height);
+};
+
+// a routine when the state is changed
+const changeArrays = (
+  bits: Bits, side: number
+): Nullable<ArrayUtils.VerticesArrays> => {
+  // is bits size is apropriate value to side?
+  if ( side**2 !== bits.length || side === 0 ) return null;
+
+  return ArrayUtils.getVertices(bits, side);
 };
 
 // implementation of draw
@@ -380,6 +394,7 @@ namespace Draw {
   };
 
 };
+const draw = Draw.main;
 
 
 

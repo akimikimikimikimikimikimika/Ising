@@ -57,16 +57,6 @@ export const initParams = () => (
       50 as number
     ),
     ...createState(
-      "interval",
-      "setInterval",
-      100 as number
-    ),
-    ...createState(
-      "playing",
-      "setPlaying",
-      false as boolean
-    ),
-    ...createState(
       "rng",
       "setRng",
       "crypto" as Rng
@@ -79,14 +69,48 @@ export const initParams = () => (
   }
 );
 
+export type Control = ReturnType<typeof initControl>;
+
+export const initControl = () => (
+  {
+    ...createState(
+      "interval",
+      "setInterval",
+      100 as number
+    ),
+    ...createState(
+      "playing",
+      "setPlaying",
+      false as boolean
+    ),
+  }
+);
+
+export type Info = ReturnType<typeof initInfo>;
+
+export const initInfo = () => (
+  {
+    ...createState(
+      "passedFrames",
+      "setPassedFrames",
+      null as number | null
+    ),
+    ...createState(
+      "actualInterval",
+      "setActualInterval",
+      null as number | null
+    )
+  }
+);
+
 export type RenderOptions = ReturnType<typeof initRenderOptions>;
 
 export const initRenderOptions = () => (
   {
     ...createState(
-      "current",
-      "setCurrent",
-      "" as string
+      "currentRenderer",
+      "setCurrentRenderer",
+      null as string | null
     ),
     ...createState(
       "overlap",
@@ -207,7 +231,7 @@ export const initRenderOptions = () => (
 );
 
 // useState wrapper
-const createState = (
+export const createState = (
   <ValueKey extends string, SetterKey extends string, T>(
     valueKey: ValueKey,
     setterKey: SetterKey,
