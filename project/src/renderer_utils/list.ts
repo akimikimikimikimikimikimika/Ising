@@ -16,6 +16,7 @@ import { renderer as svgPathRenderer } from "../renderers/svgPath";
 import { renderer as svgPolygonRenderer } from "../renderers/svgPolygon";
 import { renderer as svgRectLineRenderer } from "../renderers/svgRectLine";
 import { renderer as svgGradientRenderer } from "../renderers/svgGradient";
+import { renderer as inputRenderer } from "../renderers/input";
 import { RendererDefs } from "../utils/types";
 
 export const lists: RendererDefs.Renderer[] = [
@@ -37,4 +38,5 @@ export const lists: RendererDefs.Renderer[] = [
   svgPolygonRenderer,
   svgRectLineRenderer,
   svgGradientRenderer,
+  inputRenderer,
 ];

@@ -31,6 +31,9 @@ import {
 import {
   DrawAs as SvgGradientDrawAs
 } from "../renderers/svgGradient";
+import {
+  Type as InputType
+} from "../renderers/input";
 
 export type Parameters = ReturnType<typeof initParams>;
 
@@ -227,6 +230,16 @@ export const initRenderOptions = () => (
       "setSvgGradientDrawAs",
       "linear-horizontal" as SvgGradientDrawAs
     ),
+    ...createState(
+      "inputType",
+      "setInputType",
+      "checkbox" as InputType
+    ),
+    ...createState(
+      "inputSize",
+      "setInputSize",
+      0.9 as number
+    )
   }
 );
 

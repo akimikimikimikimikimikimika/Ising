@@ -222,6 +222,24 @@ export const SvgGradientMenu: FC<RenderOptions> = (props) => ( <>
   />
 </> );
 
+export const InputMenu: FC<RenderOptions> = (props) => ( <>
+  <Chooser
+    name="Type"
+    mode="selector"
+    options={[
+      { value: "checkbox", label: "Checkbox" },
+      { value: "radio", label: "Radio Button" }
+    ]}
+    value={props.inputType}
+    setValue={props.setInputType}
+  />
+  <Range
+    name="Size"
+    min={0.5} max={1} step={0.05}
+    value={props.inputSize} setValue={props.setInputSize}
+  />
+</> );
+
 type OverlapProps = {
   overlap: number;
   setOverlap: StateSetter<number>;
