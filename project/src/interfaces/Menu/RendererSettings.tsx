@@ -1,7 +1,7 @@
 import { FC, useMemo } from "react";
 import { Caption, Chooser } from "./RowItem";
 import { lists as renderers } from "../../renderer_utils/list";
-import { RenderOptions } from "../../utils/params";
+import { RenderOptions } from "../../renderer_utils/params";
 import { isNil } from "../../utils/type_check";
 
 export const RendererSettings: FC<RenderOptions> = (props) => {

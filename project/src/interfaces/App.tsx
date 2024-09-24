@@ -1,7 +1,8 @@
 import { FC, useEffect } from "react";
 import { Container } from "./View/View";
 import { Menu } from "./Menu/Menu";
-import { initParams, initControl, initInfo, initRenderOptions } from "../utils/params";
+import { initParams, initControl, initInfo } from "../utils/params";
+import { initRenderOptions } from "../renderer_utils/params";
 import "./App.css";
 
 export const App: FC = () => {

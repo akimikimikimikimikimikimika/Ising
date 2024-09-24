@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { Chooser, Range } from "../interfaces/Menu/RowItem";
-import { RenderOptions } from "../utils/params";
+import { RenderOptions } from "../renderer_utils/params";
 
 export const CanvasMenu: FC<RenderOptions> = (props) => ( <>
   <Chooser
@@ -69,7 +69,7 @@ export const DivGridMenu: FC<RenderOptions> = (props) => (
   />
 );
 
-export const DivFlexMenu: FC<RenderOptions> = (props) => (
+export const DivFlexMenu: FC<RenderOptions> = (props) => ( <>
   <Chooser
     name="Mode"
     mode="selector"
@@ -80,7 +80,27 @@ export const DivFlexMenu: FC<RenderOptions> = (props) => (
     value={props.divFlexMode}
     setValue={props.setDivFlexMode}
   />
-);
+  <Chooser
+    name="Reverse outer"
+    mode="segmented"
+    options={[
+      { value: false, label: "No" },
+      { value: true, label: "Yes" }
+    ]}
+    value={props.divFlexOuterReversed}
+    setValue={props.setDivFlexOuterReversed}
+  />
+  <Chooser
+    name="Reverse inner"
+    mode="segmented"
+    options={[
+      { value: false, label: "No" },
+      { value: true, label: "Yes" }
+    ]}
+    value={props.divFlexInnerReversed}
+    setValue={props.setDivFlexInnerReversed}
+  />
+</> );
 
 export const DivAbsoluteMenu: FC<RenderOptions> = (props) => ( <>
   <Minimize
@@ -93,7 +113,7 @@ export const DivAbsoluteMenu: FC<RenderOptions> = (props) => ( <>
 export const DivInlineBlockMenu: FC<RenderOptions> = (props) => ( <>
   <Chooser
     name="Writing Mode"
-    mode="segmented"
+    mode="selector"
     options={[
       { value: "horizontal-tb", label: "Horizontal T→B" },
       { value: "vertical-rl", label: "Vertical R→L" },

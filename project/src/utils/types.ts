@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { FC } from "react";
-import { RenderOptions } from "./params";
+import { RenderOptions } from "../renderer_utils/params";
 
 export const RngConsts = {
   Normal: "normal",
