@@ -3,14 +3,19 @@
   "name": "Ising",
   "icons":[
     {
-      "src": "resources/icon_192x192.png",
+      "src": "icon_192x192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "resources/icon_512x512.png",
+      "src": "icon_512x512.png",
       "type": "image/png",
       "sizes": "512x512"
+    },
+    {
+      "src": "icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
     }
   ],
   "lang": "ja-JP",
