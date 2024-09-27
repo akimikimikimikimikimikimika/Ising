@@ -1,0 +1,22 @@
+{
+	"short_name": "Ising",
+  "name": "Ising",
+  "icons":[
+    {
+      "src": "resources/icon_192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "resources/icon_512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "lang": "ja-JP",
+  "description": "Isingは,イジング模型のシミュレータです。",
+  "display": "standalone",
+  "start_url": "?standalone=yes",
+  "background_color": "#FFFF99",
+  "theme_color": "#666600"
+}

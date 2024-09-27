@@ -1,7 +1,7 @@
 Ising
 ---
 
-![Ising](resources/Icon.png "Ising")
+![Ising](resources/icon_192x192.png "Ising")
 
 
 Isingは、簡素なイジングモデルです。
