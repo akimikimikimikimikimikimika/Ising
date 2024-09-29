@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+    xmlns:svg="http://www.w3.org/2000/svg"
+    xmlns="http://www.w3.org/2000/svg"
+    width="1200"
+    height="630"
+    viewBox="0 0 1200 630">
+  <rect x="0" y="0" width="1200" height="630" fill="#cccccc" />
+  <g transform="matrix(33.75 0 0 33.75 330 45)">
+    <rect fill="#ffff99" x="0" y="0" width="16" height="16" />
+    <path fill="#666600" d="M8,2 h+1 v+1 h+1 v+1 h+1 v+1 h+1 v+1 h+1 v+1 h+1 v+2 h-2 v-1 h-1 v-1 h-1 v-1 h-1 v+8 h-1 h-1 v-8 h-1 v+1 h-1 v+1 h-1 v+1 h-2 v-2 h+1 v-1 h+1 v-1 h+1 v-1 h+1 v-1 h+1 v-1 h+1 z" />
+  </g>
+</svg>
