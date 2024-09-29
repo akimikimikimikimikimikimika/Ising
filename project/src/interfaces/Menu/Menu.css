@@ -144,10 +144,7 @@
 	width: 100%;
 	height: 100%;
 	font-size: 20px;
-}
-
-#menu > .segmented {
-	height: 60px;
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 
 #menu > .segmented > .name {
@@ -164,7 +161,7 @@
 	border: solid var(--color) 1px;
 	border-radius: 10px;
 	width: 100%;
-	height: 50%;
+	height: 80%;
 	box-sizing: border-box;
 	display: inline flex;
 	flex-direction: row;
@@ -183,17 +180,21 @@
 	text-overflow: ellipsis;
 	border-right: solid var(--color) 1px;
 	cursor: pointer;
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 .segmented > .value > .segment > .selected {
 	color: var(--bg-color);
 	background-color: var(--color);
+}
+.segmented > .value > .segment > *:not(.selected) {
+	cursor: pointer;
 }
 
 .segmented > .value > .segment > *:last-child {
 	border-right: none;
 }
 
-.plain, .plain * {
+.plain.button, .plain.button * {
 	cursor: pointer;
 }
 
@@ -207,21 +208,21 @@
 	align-items: center;
 }
 
-.plain.checked > * {
+.plain.button.checked > * {
 	color: #007aff;
 }
 
-.plain > .checkbox {
+.plain.button > .checkbox {
 	left: 0;
 	width: 40px;
 	justify-content: center;
 }
 
-.plain.checked > .checkbox:before {
+.plain.button.checked > .checkbox:before {
 	content:"✔︎";
 }
 
-.plain.unchecked > .name, .plain.checked > .name {
+.plain.button.unchecked > .name, .plain.button.checked > .name {
 	padding: 0 10px;
 	left: 40px;
 	right: 0;

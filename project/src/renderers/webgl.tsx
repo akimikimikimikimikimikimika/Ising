@@ -6,7 +6,7 @@ import { AdaptDPR as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { onColor, offColor } from "../utils/consts";
 import { ArrayUtils } from "../utils/utils";
-import { isNil } from "../utils/type_check";
+import { isNil } from "../utils/utils";
 
 const View: FC<RendererDefs.RendererProps> = (props) => {
 

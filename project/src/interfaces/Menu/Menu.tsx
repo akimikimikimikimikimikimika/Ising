@@ -3,7 +3,7 @@ import { Caption, Range, Chooser, NameValue } from "./RowItem";
 import { RendererSettings } from "./RendererSettings";
 import { Parameters, Control, Info } from "../../utils/params";
 import { RenderOptions } from "../../renderer_utils/params";
-import { isNil } from "../../utils/type_check";
+import { isNil } from "../../utils/utils";
 import "./Menu.css";
 
 

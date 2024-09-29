@@ -3,7 +3,7 @@ import { FC, memo, ReactNode } from "react";
 import { SvgRectLineMenu as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { ArrayUtils, minifyCss } from "../utils/utils";
-import { isNil } from "../utils/type_check";
+import { isNil } from "../utils/utils";
 
 export const DrawAsConsts = {
   RectFill: "rect-fill",

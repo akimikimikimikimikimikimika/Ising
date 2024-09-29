@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { Rng, Bits, Orders } from "./types";
 import { Parameters } from "./params";
-import { isNil } from "./type_check";
 
 // a wrapper of the random number generators
 namespace Random {
@@ -645,3 +644,6 @@ export const cssSupports = (...args: [string, string][] ): boolean => {
 };
 
 export const minifyCss = (src: string) => src.replace(/^ +/gm,"").replace(/\n/g,"");
+
+export type Nil = undefined | null;
+export const isNil = (value: unknown): value is Nil => value == null;

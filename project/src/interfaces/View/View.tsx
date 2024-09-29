@@ -6,7 +6,7 @@ import { onColor, offColor } from "../../utils/consts";
 import { Parameters, Control, Info } from "../../utils/params";
 import { RenderOptions } from "../../renderer_utils/params";
 import { lists as renderers } from "../../renderer_utils/list";
-import { isNil } from "../../utils/type_check";
+import { isNil } from "../../utils/utils";
 import "./View.css";
 
 type ContainerProps = RenderOptions & Control & Info & Parameters;

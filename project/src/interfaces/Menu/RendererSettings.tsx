@@ -2,7 +2,7 @@ import { FC, useMemo } from "react";
 import { Caption, Chooser } from "./RowItem";
 import { lists as renderers } from "../../renderer_utils/list";
 import { RenderOptions } from "../../renderer_utils/params";
-import { isNil } from "../../utils/type_check";
+import { isNil } from "../../utils/utils";
 
 export const RendererSettings: FC<RenderOptions> = (props) => {
 

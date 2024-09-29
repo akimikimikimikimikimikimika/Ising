@@ -3,7 +3,7 @@ import { FC, memo, useState, useRef, useEffect, CSSProperties } from "react";
 import { InputMenu as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { minifyCss, cssSupports, Runner } from "../utils/utils";
-import { isNil } from "../utils/type_check";
+import { isNil } from "../utils/utils";
 
 export const TypeConsts = {
   Checkbox: "checkbox",

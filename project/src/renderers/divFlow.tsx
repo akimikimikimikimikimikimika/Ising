@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo } from "react";
-import { DivInlineBlockMenu as Menu } from "../renderer_utils/MenuOptions";
+import { DivFlowMenu as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
 import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
 
@@ -37,10 +37,12 @@ const StaticStyle: FC = memo(() => {
     .view {
       overflow: hidden;
       line-height: 0;
+      display: block flow;
     }
     .view > div {
       position: relative;
       display: inline-block;
+      display: inline flow-root;
       box-sizing: border-box;
       width: calc( 100% / var(--side) );
       height: calc( 100% / var(--side) );
@@ -125,8 +127,9 @@ const Cells: FC<CellsProps> = memo((props) => {
 });
 
 export const renderer : RendererDefs.Renderer = {
-  name: "DIV Inline Block",
+  name: "DIV Flow",
   isActive: cssSupports(
+    // equivalent to display: inline flow-root;
     [ "display", "inline-block" ],
     [ "width", "calc( 100% / 8 * 1 )" ],
     [ "writing-mode", "horizontal-tb" ],

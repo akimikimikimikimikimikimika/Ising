@@ -9,7 +9,7 @@ import { renderer as divGradientRenderer } from "../renderers/divGradient";
 import { renderer as divGridRenderer } from "../renderers/divGrid";
 import { renderer as divFlexRenderer } from "../renderers/divFlex";
 import { renderer as divAbsoluteRenderer } from "../renderers/divAbsolute";
-import { renderer as divInlineBlockRenderer } from "../renderers/divInlineBlock";
+import { renderer as divFlowRenderer } from "../renderers/divFlow";
 import { renderer as divSublatticesRenderer } from "../renderers/divSublattices";
 import { renderer as tableRenderer } from "../renderers/table";
 import { renderer as svgPathRenderer } from "../renderers/svgPath";
@@ -31,7 +31,7 @@ export const lists: RendererDefs.Renderer[] = [
   divGridRenderer,
   divFlexRenderer,
   divAbsoluteRenderer,
-  divInlineBlockRenderer,
+  divFlowRenderer,
   divSublatticesRenderer,
   tableRenderer,
   svgPathRenderer,

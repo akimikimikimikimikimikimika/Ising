@@ -110,7 +110,7 @@ export const DivAbsoluteMenu: FC<RenderOptions> = (props) => ( <>
   <UseNthOfType {...props} />
 </> );
 
-export const DivInlineBlockMenu: FC<RenderOptions> = (props) => ( <>
+export const DivFlowMenu: FC<RenderOptions> = (props) => ( <>
   <Chooser
     name="Writing Mode"
     mode="selector"

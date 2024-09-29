@@ -1,5 +1,5 @@
 import { FC, useState, useRef, useCallback, useEffect, ReactNode } from "react";
-import { isNil } from "../../utils/type_check";
+import { isNil } from "../../utils/utils";
 
 
 
@@ -242,7 +242,7 @@ export const Button: FC<ButtonProps> = (props) => {
     event.stopPropagation();
   };
 
-  const cls = props.checked ? "plain checked" : "plain unchecked";
+  const cls = props.checked ? "plain button checked" : "plain button unchecked";
 
   return (
     <div

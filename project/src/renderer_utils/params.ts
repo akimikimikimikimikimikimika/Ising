@@ -13,7 +13,7 @@ import {
 import {
   WritingMode as DivInlineBlockWritingMode,
   Direction as DivInlineBlockDirection
-} from "../renderers/divInlineBlock";
+} from "../renderers/divFlow";
 import {
   DrawMode as DivSublatticesDrawMode,
   RotateMode as DivSublatticeRotateMode,
@@ -46,7 +46,7 @@ export const initRenderOptions = () => (
     ...createState(
       "overlap",
       "setOverlap",
-      0.1 as number
+      0 as number
     ),
     ...createState(
       "useNthOfType",

@@ -3,7 +3,7 @@
 import { FC, useRef, useEffect, useCallback } from "react";
 import { CanvasMenu as Menu } from "../renderer_utils/MenuOptions";
 import { Bits, RendererDefs } from "../utils/types";
-import { isNil } from "../utils/type_check";
+import { isNil } from "../utils/utils";
 import { onColor, offColor } from "../utils/consts";
 
 export const ContextConsts = {
