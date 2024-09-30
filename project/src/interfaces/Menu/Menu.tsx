@@ -103,7 +103,7 @@ const intervalFormatter = (value: number) => (
 const actualIntervalFormatter = (value: number | null) => {
   if (isNil(value)) return "N/A";
 
-  const ms = Math.round( value * 1e6 ) / 1e6;
+  const ms = Math.round( value * 1e3 ) / 1e3;
   const sec = ms / 1e3;
   return (
     ms % 1e3 === 0 ? `${sec}.000 sec` :
