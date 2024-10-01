@@ -100,15 +100,14 @@ const intervalFormatter = (value: number) => (
   `${value/1e3} sec`
 );
 
-const actualIntervalFormatter = (value: number | null) => {
-  if (isNil(value)) return "N/A";
+const actualIntervalFormatter = (ms: number | null) => {
+  if (isNil(ms)) return "N/A";
 
-  const ms = Math.round( value * 1e3 ) / 1e3;
-  const sec = ms / 1e3;
+  const sec = Math.round( ms ) / 1e3;
   return (
-    ms % 1e3 === 0 ? `${sec}.000 sec` :
-    ms % 1e2 === 0 ? `${sec}00 sec` :
-    ms % 1e1 === 0 ? `${sec}0 sec` :
+    ( sec * 1e0 ) % 1 === 0 ? `${sec}.000 sec` :
+    ( sec * 1e1 ) % 1 === 0 ? `${sec}00 sec` :
+    ( sec * 1e2 ) % 1 === 0 ? `${sec}0 sec` :
     `${sec} sec`
   );
 };
