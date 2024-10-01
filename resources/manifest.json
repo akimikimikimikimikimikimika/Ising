@@ -1,5 +1,5 @@
 {
-	"short_name": "Ising",
+  "short_name": "Ising",
   "name": "Ising",
   "icons":[
     {
@@ -21,7 +21,7 @@
   "lang": "ja-JP",
   "description": "Isingは,イジング模型のシミュレータです。",
   "display": "standalone",
-  "start_url": "?standalone=yes",
+  "start_url": "https://akimikimikimikimikimikimika.github.io/Ising/?standalone=yes",
   "background_color": "#FFFF99",
   "theme_color": "#666600"
 }
