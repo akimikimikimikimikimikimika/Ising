@@ -1,14 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { FC, useRef, useEffect } from "react";
-import { AdaptDPR as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
+import { useRef, useEffect } from "react";
+import { Renderer, RendererFC, Bits } from "../utils/types";
+import { ArrayUtils, isNil } from "../utils/utils";
 import { onColor, offColor } from "../utils/consts";
-import { ArrayUtils } from "../utils/utils";
-import { isNil } from "../utils/utils";
+import { AdaptDPR as Menu } from "../renderer_utils/MenuOptions";
 
-const View: FC<RendererDefs.RendererProps> = (props) => {
+const View: RendererFC = (props) => {
 
   // canvas
   const canvasRef = useRef<Canvas|null>(null);
@@ -398,7 +397,7 @@ const draw = Draw.main;
 
 
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: glMode === "webgl2" ? "WebGL 2" : "WebGL",
   isActive: glMode !== "none",
   view: View,

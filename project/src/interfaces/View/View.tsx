@@ -1,12 +1,11 @@
-import { FC, useState, useEffect, useMemo, memo } from "react";
+import { FC, useState, useEffect, useCallback, useMemo, memo } from "react";
 import { controller } from "./util";
-import { Bits, RendererDefs } from "../../utils/types";
-import { minifyCss } from "../../utils/utils";
+import { Renderer, Bits, WH } from "../../utils/types";
+import { minifyCss, isNil } from "../../utils/utils";
 import { onColor, offColor } from "../../utils/consts";
 import { Parameters, Control, Info } from "../../utils/params";
 import { RenderOptions } from "../../renderer_utils/params";
 import { lists as renderers } from "../../renderer_utils/list";
-import { isNil } from "../../utils/utils";
 import "./View.css";
 
 type ContainerProps = RenderOptions & Control & Info & Parameters;
@@ -33,8 +32,8 @@ export const Container: FC<ContainerProps> = (props) => {
 type ViewProps = {
   bits: Bits;
   side: number;
-  windowSize: RendererDefs.WH;
-} & RenderOptions;
+  windowSize: WH;
+} & RenderOptions & Control;
 
 const View: FC<ViewProps> = (props) => {
   // find the renderer we can run on the browser
@@ -87,9 +86,9 @@ const ViewStyle: FC = memo(() => {
 
 
 type WrapperProps = {
-  renderer: RendererDefs.Renderer;
+  renderer: Renderer;
   active: boolean;
-} & ViewProps & RenderOptions;
+} & ViewProps;
 
 const RendererWrapper: FC<WrapperProps> = (props) => {
 
@@ -105,6 +104,18 @@ const RendererWrapper: FC<WrapperProps> = (props) => {
     }
   }, [props.active]);
 
+  // the function to show the failure message
+  const notifyFailure = useCallback(
+    (message?: string) => {
+      setFailure(true);
+      setFailureMessage(message);
+      // stop updating when failure
+      props.setPlaying(false);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [props.setPlaying]
+  );
+
   if (!props.active) return <></>;
 
   if (failure) {
@@ -115,12 +126,6 @@ const RendererWrapper: FC<WrapperProps> = (props) => {
 
     return <FailureView message={message} />;
   }
-
-  // the function to show the failure message
-  const notifyFailure = (message?: string) => {
-    setFailure(true);
-    setFailureMessage(message);
-  };
 
   const RendererView = props.renderer.view;
   return <RendererView {...props} notifyFailure={notifyFailure} />;

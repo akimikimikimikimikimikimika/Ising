@@ -1,17 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, ReactNode } from "react";
+import { Renderer, RendererFC, Bits } from "../utils/types";
+import { ArrayUtils, indexToXY, minifyCss } from "../utils/utils";
+import { SvgPathDrawAs as DrawAs } from "../renderer_utils/types";
 import { SvgPathMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
-import { ArrayUtils, minifyCss } from "../utils/utils";
 
-export const DrawAsConsts = {
-  Fill: "fill",
-  HorizontalStroke: "horizontal-stroke",
-  VerticalStroke: "vertical-stroke",
-} as const;
-export type DrawAs = Literal<typeof DrawAsConsts>;
-
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <Root side={props.side}>
     <OptionsDepedentStyle
       drawAs={props.svgPathDrawAs}
@@ -42,13 +36,13 @@ const Root: FC<RootProps> = memo((props) => (
 ));
 
 type OptionsDepedentStyleProps = {
-  drawAs: DrawAs;
+  drawAs: DrawAs.Type;
   minimized: boolean;
 };
 
 const OptionsDepedentStyle: FC<OptionsDepedentStyleProps> = memo((props) => {
   switch (props.drawAs) {
-    case "fill": {
+    case DrawAs.Fill: {
       const src = minifyCss(`
         .view > path {
           stroke-width: 0;
@@ -65,8 +59,8 @@ const OptionsDepedentStyle: FC<OptionsDepedentStyleProps> = memo((props) => {
       `);
       return <style>{src}</style>;
     }
-    case "horizontal-stroke":
-    case "vertical-stroke": {
+    case DrawAs.HorizontalStroke:
+    case DrawAs.VerticalStroke: {
       const src = minifyCss(`
         line {
           stroke-width: 1;
@@ -86,7 +80,7 @@ const OptionsDepedentStyle: FC<OptionsDepedentStyleProps> = memo((props) => {
 });
 
 type CellsProps = {
-  drawAs: DrawAs;
+  drawAs: DrawAs.Type;
   minimized: boolean;
   side: number;
   bits: Bits;
@@ -98,7 +92,7 @@ const Cells: FC<CellsProps> = memo((props) => {
   if ( props.minimized ) {
     const { majority, minors } = ArrayUtils.minimize(bits, side);
 
-    const propName = drawAs === "fill" ? "fill" : "stroke";
+    const propName = drawAs === DrawAs.Fill ? "fill" : "stroke";
     const styleSrc = minifyCss(`
       .view {
         background-color: var(--${ majority ? "on" : "off" }-color);
@@ -122,8 +116,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 
   else {
     const bitsWithCoords = bits.map((value, idx) => {
-      const x = idx % side;
-      const y = Math.floor( idx / side );
+      const { x, y } = indexToXY(idx, side);
       return [ value, x, y ] as [ boolean, number, number ];
     });
 
@@ -145,18 +138,18 @@ const Cells: FC<CellsProps> = memo((props) => {
 
 });
 
-const makePathCommand = (drawAs: DrawAs, x: number, y: number) => {
+const makePathCommand = (drawAs: DrawAs.Type, x: number, y: number) => {
   switch (drawAs) {
-    case "fill":
+    case DrawAs.Fill:
       return `M ${x},${y} h +1 v +1 h -1 z`;
-    case "horizontal-stroke":
+    case DrawAs.HorizontalStroke:
       return `M ${x},${y+0.5} h +1`;
-    case "vertical-stroke":
+    case DrawAs.VerticalStroke:
       return `M ${x+0.5},${y} v +1`;
   }
 };
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "SVG Path",
   isActive: Boolean(window.SVGSVGElement),
   view: View,

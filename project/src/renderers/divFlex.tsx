@@ -1,16 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, useMemo } from "react";
-import { DivFlexMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
+import { Renderer, RendererFC, Bits } from "../utils/types";
 import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
+import { DivFlexMode as Mode } from "../renderer_utils/types";
+import { DivFlexMenu as Menu } from "../renderer_utils/MenuOptions";
 
-export const ModeConsts = {
-  VerticalHorizontal: "vertical-horizontal",
-  HorizontalVertical: "horizontal-vertical",
-} as const;
-export type Mode = Literal<typeof ModeConsts>;
-
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <div className="view">
     <StaticStyle />
     <ModeDependentStyle
@@ -48,7 +43,7 @@ const StaticStyle: FC = memo(() => {
 });
 
 type ModeDependentStyleProps = {
-  mode: Mode;
+  mode: Mode.Type;
   outerReversed: boolean;
   innerReversed: boolean;
 };
@@ -56,9 +51,9 @@ type ModeDependentStyleProps = {
 const ModeDependentStyle: FC<ModeDependentStyleProps> = memo((props) => {
   let [outer, inner] = (() => {
     switch (props.mode) {
-      case "vertical-horizontal":
+      case Mode.VerticalHorizontal:
         return ["column", "row"];
-      case "horizontal-vertical":
+      case Mode.HorizontalVertical:
         return ["row", "column"];
     }
   })();
@@ -79,7 +74,7 @@ const ModeDependentStyle: FC<ModeDependentStyleProps> = memo((props) => {
 });
 
 type CellsProps = {
-  mode: Mode;
+  mode: Mode.Type;
   outerReversed: boolean;
   innerReversed: boolean;
   bits: Bits;
@@ -95,9 +90,9 @@ const Cells: FC<CellsProps> = (props) => {
     if (props.innerReversed) processes.push(flipX);
     processes.push( (() => {
       switch (props.mode) {
-        case "vertical-horizontal":
+        case Mode.VerticalHorizontal:
           return identity;
-        case "horizontal-vertical":
+        case Mode.HorizontalVertical:
           return transpose;
       }
     })() );
@@ -118,7 +113,7 @@ const Cells: FC<CellsProps> = (props) => {
   </>;
 };
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV Flex",
   isActive: cssSupports(
     [ "display", "flex" ],

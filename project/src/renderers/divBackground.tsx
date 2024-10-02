@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo } from "react";
+import { Renderer, RendererFC, Bits } from "../utils/types";
+import { ArrayUtils, indexToXY, cssSupports, minifyCss } from "../utils/utils";
 import { DivBackgroundMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
-import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
 
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <div className="view">
     <StaticStyle />
     <OptionsDependentStyle
@@ -55,8 +55,7 @@ const OptionsDependentStyle: FC<OptionsDependentStyleProps> = memo((props) => {
     const position =
       Array.from({ length: props.side**2 })
       .map((_,idx) => {
-        const x = idx % props.side;
-        const y = Math.floor( idx / props.side );
+        const { x, y } = indexToXY(idx, props.side);
 
         const x_adjusted = x - props.overlap;
         const y_adjusted = y - props.overlap;
@@ -156,7 +155,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV Background",
   isActive: cssSupports(
     [ "background-size", "calc( 100% / 100 )" ],

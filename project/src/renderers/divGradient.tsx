@@ -1,17 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo } from "react";
+import { Renderer, RendererFC, Bits } from "../utils/types";
+import { ArrayUtils, indexToXY, cssSupports, minifyCss } from "../utils/utils";
+import { DivGradientMode as Mode } from "../renderer_utils/types";
 import { DivGradientMenu as Menu } from "../renderer_utils/MenuOptions";
-import { RendererDefs, Bits } from "../utils/types";
-import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
 
-export const ModeConsts = {
-  LinearHorizontal: "linear-horizontal",
-  LinearVertical: "linear-vertical",
-  Conic: "conic",
-} as const;
-export type Mode = Literal<typeof ModeConsts>;
-
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <div className="view">
     <StaticStyle />
     <OptionsDependentStyle
@@ -47,7 +41,7 @@ const StaticStyle: FC = memo(() => {
 
 type OptionsDependentStyleProps = {
   side: number;
-  mode: Mode;
+  mode: Mode.Type;
   overlap: number;
   adaptDevicePixelRatio: boolean;
 };
@@ -56,16 +50,16 @@ const OptionsDependentStyle: FC<OptionsDependentStyleProps> = memo((props) => {
   type Size = { x: string, y: string };
 
   const size: Size = (() => {
-    if ( props.mode === "conic" ) {
+    if ( props.mode === Mode.Conic ) {
       const size = `calc( 100% / ${props.side} * ${2+props.overlap} )`;
       return { x: size, y: size }
     }
     else {
       const thinSize = `calc( 100% / ${props.side} * ${1+props.overlap} )`;
       const thickSize = "100%";
-      if ( props.mode === "linear-horizontal" )
+      if ( props.mode === Mode.LinearHorizontal )
         return { x: thickSize, y: thinSize };
-      if ( props.mode === "linear-vertical" )
+      if ( props.mode === Mode.LinearVertical )
         return { x: thinSize, y: thickSize };
 
       // unreachable
@@ -89,7 +83,7 @@ const OptionsDependentStyle: FC<OptionsDependentStyleProps> = memo((props) => {
 type DynamicStyleProps = {
   bits: Bits;
   side: number;
-  mode: Mode;
+  mode: Mode.Type;
   overlap: number;
 };
 
@@ -104,7 +98,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
   const images: Image[] = (() => {
 
-    if (mode === "conic") {
+    if (mode === Mode.Conic) {
 
       const latticeSide = side % 2 === 0 ? side/2 : (side+1)/2;
       const getValue = (x: number, y: number) => bits[x+y*side];
@@ -113,8 +107,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
       return Array.from({ length: latticeSide**2 })
       .map((_,idx) => {
-        const x = idx % latticeSide;
-        const y = Math.floor( idx / latticeSide );
+        const { x, y } = indexToXY(idx, latticeSide);
 
         const leftTop     = getValue( 2*x        ,  2*y         );
         const rightTop    = getValue((2*x+1)%side,  2*y         );
@@ -143,9 +136,9 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
     else {
       const bitsNested = ((mode) => {
         switch (mode) {
-          case "linear-horizontal":
+          case Mode.LinearHorizontal:
             return ArrayUtils.nested(props.bits);
-          case "linear-vertical":
+          case Mode.LinearVertical:
             return ArrayUtils.nested(ArrayUtils.transpose(props.bits));
         }
       })(mode);
@@ -154,8 +147,8 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
       const denom = side - 1 - overlap;
       const direction = ((mode) => {
         switch (mode) {
-          case "linear-horizontal": return "to right";
-          case "linear-vertical":   return "to bottom";
+          case Mode.LinearHorizontal: return "to right";
+          case Mode.LinearVertical:   return "to bottom";
         }
       })(mode);
 
@@ -175,9 +168,9 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
         const image = `linear-gradient(${direction}, ${strStops.join(", ")})`;
 
         switch (mode) {
-          case "linear-horizontal":
+          case Mode.LinearHorizontal:
             return { image, positionX: "center", positionY: position };
-          case "linear-vertical":
+          case Mode.LinearVertical:
             return { image, positionX: position, positionY: "center" };
         }
       });
@@ -200,7 +193,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
   return <style>{src}</style>;
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV Gradient",
   isActive: cssSupports(
     [ "background-size", "calc( 100% / 100 )" ],

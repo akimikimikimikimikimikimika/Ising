@@ -17,9 +17,9 @@ import { renderer as svgPolygonRenderer } from "../renderers/svgPolygon";
 import { renderer as svgRectLineRenderer } from "../renderers/svgRectLine";
 import { renderer as svgGradientRenderer } from "../renderers/svgGradient";
 import { renderer as inputRenderer } from "../renderers/input";
-import { RendererDefs } from "../utils/types";
+import { Renderer } from "../utils/types";
 
-export const lists: RendererDefs.Renderer[] = [
+export const lists: Renderer[] = [
   webglRenderer,
   webgpuRenderer,
   canvasRenderer,

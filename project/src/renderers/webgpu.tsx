@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { FC, useRef, useState, useEffect } from "react";
-import { AdaptDPR as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
+import { useRef, useState, useEffect } from "react";
+import { Renderer, RendererFC, Bits } from "../utils/types";
+import { ArrayUtils, isNil } from "../utils/utils";
 import { onColor, offColor } from "../utils/consts";
-import { ArrayUtils } from "../utils/utils";
-import { isNil } from "../utils/utils";
+import { AdaptDPR as Menu } from "../renderer_utils/MenuOptions";
 
-const View: FC<RendererDefs.RendererProps> = (props) => {
+const View: RendererFC = (props) => {
 
   const [hasDevice, setHasDevice] = useState<boolean>(false);
   const canvasRef = useRef<HTMLCanvasElement|null>(null);
@@ -580,7 +579,7 @@ const draw = Draw.main;
 
 
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "WebGPU",
   isActive: !isNil(navigator.gpu),
   view: View,

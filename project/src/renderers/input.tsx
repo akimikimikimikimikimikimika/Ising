@@ -1,20 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, useState, useRef, useEffect, CSSProperties } from "react";
+import { Renderer, RendererFC, XY, WH, Bits } from "../utils/types";
+import { Runner, indexToXY, cssSupports, minifyCss, isNil } from "../utils/utils";
+import { InputType as Type } from "../renderer_utils/types";
 import { InputMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
-import { minifyCss, cssSupports, Runner } from "../utils/utils";
-import { isNil } from "../utils/utils";
 
-export const TypeConsts = {
-  Checkbox: "checkbox",
-  Radio: "radio"
-} as const;
-export type Type = Literal<typeof TypeConsts>;
-
-type WH = RendererDefs.WH;
-type XY = { x: number, y: number };
-
-const View: FC<RendererDefs.RendererProps> = (props) => {
+const View: RendererFC = (props) => {
   const viewRef = useRef<HTMLDivElement|null>(null);
 
   const [viewSize, setViewSize] = useState<WH | null>(null);
@@ -121,7 +112,7 @@ const OptionsDependentStyle: FC<OptionsDependentStyleProps> = memo((props) => {
 type CellsProps = {
   side: number;
   bits: Bits;
-  type: Type;
+  type: Type.Type;
   isVisible: boolean;
 };
 
@@ -129,13 +120,12 @@ const Cells: FC<CellsProps> = memo((props) => {
   if (!props.isVisible) return <></>;
 
   return <>{props.bits.map((value, idx) => {
-    const x = idx % props.side;
-    const y = Math.floor( idx / props.side );
+    const xy = indexToXY(idx, props.side);
 
     return (
       <Cell
         key={idx}
-        x={x} y={y} value={value}
+        {...xy} value={value}
         type={props.type}
       />
     );
@@ -146,14 +136,14 @@ type CellProps = {
   x: number;
   y: number;
   value: boolean;
-  type: Type;
+  type: Type.Type;
 };
 
 const Cell: FC<CellProps> = memo((props) => {
   const style = { "--x": props.x, "--y": props.y } as CSSProperties;
 
   switch (props.type) {
-    case "checkbox":
+    case Type.Checkbox:
       return (
         <input
           type="checkbox"
@@ -162,7 +152,7 @@ const Cell: FC<CellProps> = memo((props) => {
           style={style}
         />
       );
-    case "radio":
+    case Type.Radio:
       return (
         <input
           type="radio"
@@ -177,7 +167,7 @@ const Cell: FC<CellProps> = memo((props) => {
 });
 
 type ReferenceCellProps = {
-  type: Type;
+  type: Type.Type;
   isVisible: boolean;
   setInputSize: StateSetter<WH | null>;
 };
@@ -204,7 +194,7 @@ const ReferenceCell: FC<ReferenceCellProps> = memo((props) => {
   if (!props.isVisible) return <></>;
 
   switch (props.type) {
-    case "checkbox":
+    case Type.Checkbox:
       return (
         <input
           className="reference"
@@ -213,7 +203,7 @@ const ReferenceCell: FC<ReferenceCellProps> = memo((props) => {
           ref={inputRef}
         />
       );
-    case "radio":
+    case Type.Radio:
       return (
         <input
           className="reference"
@@ -227,7 +217,7 @@ const ReferenceCell: FC<ReferenceCellProps> = memo((props) => {
   }
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "Input Checkbox / Radio",
   isActive: cssSupports(
     [ "accent-color", "red" ]

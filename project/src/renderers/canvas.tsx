@@ -1,18 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { FC, useRef, useEffect, useCallback } from "react";
-import { CanvasMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
-import { isNil } from "../utils/utils";
+import { useRef, useEffect, useCallback } from "react";
+import { Renderer, RendererFC, Bits } from "../utils/types";
+import { indexToXY, isNil } from "../utils/utils";
 import { onColor, offColor } from "../utils/consts";
+import { CanvasContext as Context } from "../renderer_utils/types";
+import { CanvasMenu as Menu } from "../renderer_utils/MenuOptions";
 
-export const ContextConsts = {
-  Context2d: "2d",
-  ContextBitmap: "bitmaprenderer",
-} as const;
-export type Context = Literal<typeof ContextConsts>;
-
-const View: FC<RendererDefs.RendererProps> = (props) => {
+const View: RendererFC = (props) => {
 
   // canvas
   const canvasRef = useRef<HTMLCanvasElement|null>(null);
@@ -34,11 +29,11 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
       return;
     }
     switch (props.canvasContext) {
-      case "2d": {
+      case Context.TwoD: {
         context2dRef.current = context as Context2D;
         contextBitmapRef.current = null;
       } break;
-      case "bitmaprenderer": {
+      case Context.Bitmap: {
         contextBitmapRef.current = context as ContextBitmap;
         context2dRef.current = null;
       }
@@ -68,7 +63,7 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
       } = infoRef.current;
       switch (props.canvasContext) {
 
-        case "2d": {
+        case Context.TwoD: {
           const canvas = canvasRef.current;
           const context = context2dRef.current;
           if ( isNil(canvas) || isNil(context) ) return;
@@ -81,7 +76,7 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
           context.fillRect(w*x,h*y,w,h);
         } break;
 
-        case "bitmaprenderer": {
+        case Context.Bitmap: {
           const context = contextBitmapRef.current;
           if ( isNil(context) ) return;
           const array = arrayRef.current;
@@ -141,9 +136,9 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
       // calculate expecting array size
       const arraySize = (() => {
         switch (props.canvasContext) {
-          case "bitmaprenderer":
+          case Context.Bitmap:
             return (props.side**2) * width * height * 4;
-          case "2d":
+          case Context.TwoD:
             return 0;
         }
       })();
@@ -181,8 +176,7 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
         const prevValue = previousBits.current[idx];
         if (value !== prevValue) return;
 
-        const x = idx % props.side;
-        const y = Math.floor( idx / props.side );
+        const { x, y } = indexToXY(idx, props.side);
         drawBit(x,y,value);
       });
     }
@@ -201,16 +195,16 @@ const View: FC<RendererDefs.RendererProps> = (props) => {
 };
 
 // wrapper components to switch contexts safely
-const WrapperView: FC<RendererDefs.RendererProps> = (props) => {
+const WrapperView: RendererFC = (props) => {
   switch (props.canvasContext) {
-    case "2d": return <Wrapper2DView {...props} />;
-    case "bitmaprenderer": return <WrapperBitmapView {...props} />;
+    case Context.TwoD: return <Wrapper2DView {...props} />;
+    case Context.Bitmap: return <WrapperBitmapView {...props} />;
   }
 };
-const Wrapper2DView: FC<RendererDefs.RendererProps> = (props) => <View {...props} />;
-const WrapperBitmapView: FC<RendererDefs.RendererProps> = (props) => <View {...props} />;
+const Wrapper2DView: RendererFC = (props) => <View {...props} />;
+const WrapperBitmapView: RendererFC = (props) => <View {...props} />;
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "Canvas",
   isActive:
     Boolean(window.CanvasRenderingContext2D) &&

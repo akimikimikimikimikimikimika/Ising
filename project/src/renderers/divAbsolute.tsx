@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, CSSProperties } from "react";
+import { Renderer, RendererFC, Bits } from "../utils/types";
+import { ArrayUtils, indexToXY, cssSupports, minifyCss } from "../utils/utils";
 import { DivAbsoluteMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
-import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
 
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <div className="view">
     <StaticStyle />
     <OptionsDependentStyle
@@ -114,8 +114,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 
     else {
       return <>{props.bits.map((value,idx) => {
-        const x = idx % props.side;
-        const y = Math.floor( idx / props.side );
+        const { x, y } = indexToXY(idx, props.side);
         const style = { "--x": x, "--y": y } as CSSProperties;
         return (
           <div
@@ -184,7 +183,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV Absolute",
   isActive: cssSupports(
     [ "display", "block" ],

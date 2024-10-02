@@ -2,8 +2,9 @@ import { FC } from "react";
 import { Caption, Range, Chooser, NameValue } from "./RowItem";
 import { RendererSettings } from "./RendererSettings";
 import { Parameters, Control, Info } from "../../utils/params";
-import { RenderOptions } from "../../renderer_utils/params";
+import { Rng, Theme } from "../../utils/types";
 import { isNil } from "../../utils/utils";
+import { RenderOptions } from "../../renderer_utils/params";
 import "./Menu.css";
 
 
@@ -68,8 +69,8 @@ export const Menu: FC<MenuProps> = (props) => (
       name="RNG"
       mode="segmented"
       options={[
-        { value: "normal", label: "Normal" },
-        { value: "crypto", label: "Crypto" }
+        { value: Rng.Normal, label: "Normal" },
+        { value: Rng.Crypto, label: "Crypto" }
       ]}
       value={props.rng}
       setValue={props.setRng}
@@ -78,9 +79,9 @@ export const Menu: FC<MenuProps> = (props) => (
       name="Theme"
       mode="segmented"
       options={[
-        { value: "theme-auto" , label: "Auto"  },
-        { value: "theme-light", label: "Light" },
-        { value: "theme-dark" , label: "Dark"  }
+        { value: Theme.Auto , label: "Auto"  },
+        { value: Theme.Light, label: "Light" },
+        { value: Theme.Dark , label: "Dark"  }
       ]}
       value={props.theme}
       setValue={props.setTheme}

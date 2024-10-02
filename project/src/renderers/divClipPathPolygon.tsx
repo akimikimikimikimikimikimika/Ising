@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo } from "react";
-import { DivClipPathPolygonMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
+import { Renderer, RendererFC, Bits } from "../utils/types";
 import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
+import { DivClipPathPolygonMenu as Menu } from "../renderer_utils/MenuOptions";
 
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <div className="view">
     <ModeDependentStyle minimized={props.divClipPathPolygonMinimized} />
     <DynamicStyle
@@ -108,7 +108,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV ClipPath Polygon",
   isActive: cssSupports(
     [ "clip-path", "polygon( 10% 10%, 10% 30%, 30% 10% )" ]

@@ -1,18 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, ReactNode } from "react";
+import { Renderer, RendererFC, Bits } from "../utils/types";
+import { ArrayUtils, indexToXY, minifyCss, isNil } from "../utils/utils";
+import { SvgRectLineDrawAs as DrawAs } from "../renderer_utils/types";
 import { SvgRectLineMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
-import { ArrayUtils, minifyCss } from "../utils/utils";
-import { isNil } from "../utils/utils";
 
-export const DrawAsConsts = {
-  RectFill: "rect-fill",
-  HorizontalLineStroke: "horizontal-line-stroke",
-  VerticalLineStroke: "vertical-line-stroke",
-} as const;
-export type DrawAs = Literal<typeof DrawAsConsts>;
-
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <Root side={props.side}>
     <OptionsDepedentStyle
       drawAs={props.svgRectLineDrawAs}
@@ -45,7 +38,7 @@ const Root: FC<RootProps> = memo((props) => (
 ));
 
 type OptionsDepedentStyleProps = {
-  drawAs: DrawAs;
+  drawAs: DrawAs.Type;
   minimized: boolean;
   overlap: number;
 };
@@ -90,7 +83,7 @@ const OptionsDepedentStyle: FC<OptionsDepedentStyleProps> = memo((props) => {
 });
 
 type CellsProps = {
-  drawAs: DrawAs;
+  drawAs: DrawAs.Type;
   minimized: boolean;
   overlap: number;
   side: number;
@@ -104,8 +97,8 @@ const Cells: FC<CellsProps> = memo((props) => {
   if ( props.minimized ) {
     const { majority, minors } = ArrayUtils.minimize(bits, side);
 
-    const elemName = drawAs === "rect-fill" ? "rect" : "line";
-    const propName = drawAs === "rect-fill" ? "fill" : "stroke";
+    const elemName = drawAs === DrawAs.RectFill ? "rect" : "line";
+    const propName = drawAs === DrawAs.RectFill ? "fill" : "stroke";
     const styleSrc = minifyCss(`
       .view {
         background-color: var(--${ majority ? "on" : "off" }-color);
@@ -131,8 +124,7 @@ const Cells: FC<CellsProps> = memo((props) => {
   else {
     return <>
       {bits.map((value,idx) => {
-        const x = idx % side;
-        const y = Math.floor( idx / side );
+        const { x, y } = indexToXY(idx, side);
         return (
           <Cell
             key={idx}
@@ -149,7 +141,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 });
 
 type CellProps = {
-  drawAs: DrawAs;
+  drawAs: DrawAs.Type;
   overlap: number;
   x: number;
   y: number;
@@ -162,7 +154,7 @@ const Cell: FC<CellProps> = memo((props) => {
     props.value ? "on" : "off";
 
   switch (props.drawAs) {
-    case "rect-fill": {
+    case DrawAs.RectFill: {
       const side = 1 + props.overlap;
       return (
         <rect
@@ -173,7 +165,7 @@ const Cell: FC<CellProps> = memo((props) => {
         />
       );
     }
-    case "horizontal-line-stroke": {
+    case DrawAs.HorizontalLineStroke: {
       const length = 1 + props.overlap;
       const center = ( 1 + props.overlap ) / 2;
       return (
@@ -184,7 +176,7 @@ const Cell: FC<CellProps> = memo((props) => {
         />
       );
     }
-    case "vertical-line-stroke": {
+    case DrawAs.VerticalLineStroke: {
       const length = 1 + props.overlap;
       const center = ( 1 + props.overlap ) / 2;
       return (
@@ -198,7 +190,7 @@ const Cell: FC<CellProps> = memo((props) => {
   }
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "SVG Rect / Line",
   isActive: Boolean(window.SVGSVGElement),
   view: View,

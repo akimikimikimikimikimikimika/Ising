@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { Rng, Bits, Orders } from "./types";
+import { Rng, Bits, Orders, XY } from "./types";
 import { Parameters } from "./params";
 
 // a wrapper of the random number generators
@@ -28,10 +28,10 @@ namespace Random {
   };
 
   // wrapper of random number generators
-  export const random = (rng:Rng): number => {
+  export const random = (rng: Rng.Type): number => {
     switch (rng) {
-      case "normal": return Math.random();
-      case "crypto": return cryptoRng();
+      case Rng.Normal: return Math.random();
+      case Rng.Crypto: return cryptoRng();
     }
   };
 
@@ -70,8 +70,7 @@ export namespace Calc {
     for (const order of orders) {
 
       // get the x, y coordinate
-      const x = order % side;
-      const y = Math.floor( order / side );
+      const { x, y } = indexToXY(order, side);
 
       // calculate the exponent of boltzmann factor
       const bf =
@@ -352,9 +351,8 @@ export namespace ArrayUtils {
     export const performProcess = (bits: Bits, process: Process): Bits => {
       const side = Math.round(Math.sqrt(bits.length));
       return Array.from({ length: bits.length },(_,idx) => {
-        const inputX = idx % side;
-        const inputY = Math.floor( idx / side );
-        const { x, y } = process({ x: inputX, y: inputY, side });
+        const inputXY = indexToXY(idx, side);
+        const { x, y } = process({ ...inputXY, side });
         return bits[ x + y * side ];
       });
     };
@@ -380,7 +378,7 @@ export namespace ArrayUtils {
   // This is used in renderers with the minimized option
   namespace Minimize {
 
-    type Cell = { x: number, y: number };
+    type Cell = XY;
 
     type Minimize = (
       ( (bits: Bits, side: number, includeMajor?: false) => {
@@ -400,9 +398,8 @@ export namespace ArrayUtils {
 
       const tuples =
         bits.map((value,idx) => {
-          const x = idx % side;
-          const y = Math.floor( idx / side );
-          return [value,x,y] as [boolean,number,number];
+          const { x, y } = indexToXY(idx, side);
+          return [ value, x, y ] as [ boolean, number, number ];
         });
 
       const minors =
@@ -440,7 +437,7 @@ export namespace ArrayUtils {
   // This is used in renderers with polygon drawing
   namespace Polygon {
 
-    type Point = { x: number, y: number };
+    type Point = XY;
 
     type GetPolygonPoints = (
       ( (bits: Bits, side: number, minimize: false ) => { on: Point[], off: Point[] } ) &
@@ -635,6 +632,10 @@ export namespace ArrayUtils {
   export const getVertices = Vertices.get;
 
 }
+
+export const indexToXY = (index: number, side: number): XY => (
+  { x: index % side, y: Math.floor( index / side ) }
+);
 
 export const cssSupports = (...args: [string, string][] ): boolean => {
   for (const [prop,value] of args) {

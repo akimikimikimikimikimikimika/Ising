@@ -28,12 +28,12 @@ export const initParams = () => (
     ...createState(
       "rng",
       "setRng",
-      "crypto" as Rng
+      Rng.Crypto as Rng.Type
     ),
     ...createState(
       "theme",
       "setTheme",
-      "theme-auto" as Theme
+      Theme.Auto as Theme.Type
     )
   }
 );
