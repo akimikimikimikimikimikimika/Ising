@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, ReactNode } from "react";
-import { SvgPolygonMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
+import { Renderer, RendererFC, Bits } from "../utils/types";
 import { ArrayUtils, minifyCss } from "../utils/utils";
+import { SvgPolygonMenu as Menu } from "../renderer_utils/MenuOptions";
 
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <Root side={props.side}>
     <StaticStyle />
     <MinimizedDepedentStyle minimized={props.svgPolygonMinimized} />
@@ -110,7 +110,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "SVG Polygon",
   isActive: Boolean(window.SVGSVGElement),
   view: View,

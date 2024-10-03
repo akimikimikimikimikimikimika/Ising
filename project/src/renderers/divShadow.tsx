@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo } from "react";
+import { Renderer, RendererFC, Bits } from "../utils/types";
+import { ArrayUtils, indexToXY, cssSupports, minifyCss } from "../utils/utils";
 import { DivShadowMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
-import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
 
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <div className="view">
     <StaticStyle />
     <SizeDependentStyle side={props.side} />
@@ -60,8 +60,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
   if (!props.minimized) {
     const boxShadow =
     bits.map((value,idx) => {
-      const x = idx % side;
-      const y = Math.floor( idx / side );
+      const { x, y } = indexToXY(idx, side);
 
       const color = value ? "var(--on-color)" : "var(--off-color)";
 
@@ -110,7 +109,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
 
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV Shadow",
   isActive: cssSupports(
     [ "container-type", "size" ],

@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, CSSProperties } from "react";
+import { Renderer, RendererFC, Bits } from "../utils/types";
+import { ArrayUtils, indexToXY, cssSupports, minifyCss } from "../utils/utils";
 import { DivAbsoluteMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
-import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
 
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <div className="view">
     <StaticStyle />
     <OptionsDependentStyle
@@ -31,12 +31,6 @@ const StaticStyle: FC = memo(() => {
       right: calc( 100% / var(--side) * ( var(--side) - 1 - var(--x) ) );
       top: calc( 100% / var(--side) * var(--y) );
       bottom: calc( 100% / var(--side) * ( var(--side) - 1 - var(--y) ) );
-    }
-    .view > .on {
-      background-color: var(--on-color);
-    }
-    .view > .off {
-      background-color: var(--off-color);
     }
   `);
 
@@ -108,18 +102,20 @@ const Cells: FC<CellsProps> = memo((props) => {
 
     if (useNthOfType) {
       return <>{props.bits.map((value,idx) => (
-        <div key={idx} className={value ? "on" : "off"} />
+        <div
+          key={`${idx} useNthOfType`}
+          className={value ? "on" : "off"}
+        />
       ))}</>;
     }
 
     else {
       return <>{props.bits.map((value,idx) => {
-        const x = idx % props.side;
-        const y = Math.floor( idx / props.side );
+        const { x, y } = indexToXY(idx, props.side);
         const style = { "--x": x, "--y": y } as CSSProperties;
         return (
           <div
-            key={idx}
+            key={`${idx}`}
             className={value ? "on" : "off"}
             style={style}
           />
@@ -157,7 +153,7 @@ const Cells: FC<CellsProps> = memo((props) => {
       return <>
         {style}
         {minors.map((_,idx) => (
-          <div key={idx} />
+          <div key={`${idx} minimized useNthOfType`} />
         ))}
       </>;
     }
@@ -174,7 +170,7 @@ const Cells: FC<CellsProps> = memo((props) => {
             "--y": position.y
           } as CSSProperties;
           return (
-            <div key={idx} style={style} />
+            <div key={`${idx} minimized`} style={style} />
           );
         })}
       </>;
@@ -184,7 +180,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV Absolute",
   isActive: cssSupports(
     [ "display", "block" ],

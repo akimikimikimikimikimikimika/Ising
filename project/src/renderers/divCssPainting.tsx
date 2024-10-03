@@ -1,14 +1,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, useEffect } from "react";
-import { Bits, RendererDefs } from "../utils/types";
+import { Renderer, RendererFC, Bits } from "../utils/types";
 import { cssSupports, minifyCss } from "../utils/utils";
 
 export declare class CSS {
   static paintWorklet: Worklet;
 }
 
-const View: FC<RendererDefs.RendererProps> = (props) => {
+const View: RendererFC = (props) => {
   useEffect(() => {
     CSS.paintWorklet.addModule("assets/paintWorklet.js")
     .catch(() => {
@@ -58,7 +58,7 @@ const DynamicStyle: FC<DynamicStyleProps> = memo((props) => {
   return <style>{src}</style>;
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV CSS Painting",
   isActive: (
     ("paintWorklet" in CSS) &&

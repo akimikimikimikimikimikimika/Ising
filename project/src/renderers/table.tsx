@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo } from "react";
-import { Bits, RendererDefs } from "../utils/types";
+import { Renderer, RendererFC, Bits } from "../utils/types";
 import { ArrayUtils, minifyCss } from "../utils/utils";
 
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <table className="view">
     <StaticStyle />
     <Cells bits={props.bits} />
@@ -45,7 +45,7 @@ const Cells: FC<CellsProps> = (props) => {
   </tbody>;
 };
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "Table",
   isActive: Boolean(window.HTMLTableCellElement),
   view: View

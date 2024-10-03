@@ -1,33 +1,25 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo } from "react";
-import { DivFlowMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
+import { Renderer, RendererFC, Bits } from "../utils/types";
 import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
+import {
+  DivFlowWritingMode as WritingMode,
+  DivFlowDirection   as Direction
+} from "../renderer_utils/types";
+import { DivFlowMenu as Menu } from "../renderer_utils/MenuOptions";
 
-export const WritingModeConsts = {
-  HorizontalTB: "horizontal-tb",
-  VerticalRL: "vertical-rl",
-  VerticalLR: "vertical-lr",
-} as const;
-export type WritingMode = Literal<typeof WritingModeConsts>;
-
-export const DirectionConsts = {
-  LTR: "ltr", RTL: "rtl",
-} as const;
-export type Direction = Literal<typeof DirectionConsts>;
-
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <div className="view">
     <StaticStyle />
     <ModeDependentStyle
-      writingMode={props.divInlineBlockWritingMode}
-      direction={props.divInlineBlockDirection}
+      writingMode={props.divFlowWritingMode}
+      direction={props.divFlowDirection}
     />
     <SizeDependentStyle side={props.side} />
     <Cells
       side={props.side} bits={props.bits}
-      writingMode={props.divInlineBlockWritingMode}
-      direction={props.divInlineBlockDirection}
+      writingMode={props.divFlowWritingMode}
+      direction={props.divFlowDirection}
     />
   </div>
 );
@@ -59,8 +51,8 @@ const StaticStyle: FC = memo(() => {
 });
 
 type ModeDependentStyleProps = {
-  writingMode: WritingMode;
-  direction: Direction;
+  writingMode: WritingMode.Type;
+  direction: Direction.Type;
 };
 
 const ModeDependentStyle: FC<ModeDependentStyleProps> = memo((props) => {
@@ -91,25 +83,25 @@ const SizeDependentStyle: FC<SizeDependentStyleProps> = memo(({ side }) => {
 const { identity, flipX, flipY, transpose } = ArrayUtils.processors;
 const multiply = ArrayUtils.multiplyProcess;
 
-type Processors = { [key in WritingMode]: { [key in Direction]: ArrayUtils.Process } };
+type Processors = { [key in WritingMode.Type]: { [key in Direction.Type]: ArrayUtils.Process } };
 const processors: Processors = {
-  "horizontal-tb": {
-    "ltr": identity,
-    "rtl": flipX
+  [WritingMode.HorizontalTB]: {
+    [Direction.LTR]: identity,
+    [Direction.RTL]: flipX
   },
-  "vertical-rl": {
-    "ltr": multiply( transpose, flipX ),
-    "rtl": multiply( transpose, flipX, flipY )
+  [WritingMode.VerticalRL]: {
+    [Direction.LTR]: multiply( transpose, flipX ),
+    [Direction.RTL]: multiply( transpose, flipX, flipY )
   },
-  "vertical-lr": {
-    "ltr": transpose,
-    "rtl": multiply( transpose, flipY )
+  [WritingMode.VerticalLR]: {
+    [Direction.LTR]: transpose,
+    [Direction.RTL]: multiply( transpose, flipY )
   }
 };
 
 type CellsProps = {
-  writingMode: WritingMode;
-  direction: Direction;
+  writingMode: WritingMode.Type;
+  direction: Direction.Type;
   side: number;
   bits: Bits;
 };
@@ -126,7 +118,7 @@ const Cells: FC<CellsProps> = memo((props) => {
   ))}</>;
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV Flow",
   isActive: cssSupports(
     // equivalent to display: inline flow-root;

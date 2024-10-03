@@ -1,37 +1,4 @@
-import {
-  Context as CanvasContext
-} from "../renderers/canvas";
-import {
-  Mode as DivGradientMode
-} from "../renderers/divGradient";
-import {
-  Mode as DivGridMode
-} from "../renderers/divGrid";
-import {
-  Mode as DivFlexMode
-} from "../renderers/divFlex";
-import {
-  WritingMode as DivInlineBlockWritingMode,
-  Direction as DivInlineBlockDirection
-} from "../renderers/divFlow";
-import {
-  DrawMode as DivSublatticesDrawMode,
-  RotateMode as DivSublatticeRotateMode,
-  Layout as DivSublatticeLayout,
-  Angle as DivSublatticesAngle
-} from "../renderers/divSublattices";
-import {
-  DrawAs as SvgPathDrawAs
-} from "../renderers/svgPath";
-import {
-  DrawAs as SvgRectLineDrawAs
-} from "../renderers/svgRectLine";
-import {
-  DrawAs as SvgGradientDrawAs
-} from "../renderers/svgGradient";
-import {
-  Type as InputType
-} from "../renderers/input";
+import { CanvasContext, DivGradientMode, DivGridMode, DivFlexMode, DivFlowWritingMode, DivFlowDirection, DivSublatticesDrawMode, DivSublatticesRotateMode, DivSublatticesLayout, DivSublatticesAngle, SvgPathDrawAs, SvgRectLineDrawAs, SvgGradientDrawAs, InputType } from "./types";
 import { createState } from "../utils/params";
 
 export type RenderOptions = ReturnType<typeof initRenderOptions>;
@@ -61,7 +28,7 @@ export const initRenderOptions = () => (
     ...createState(
       "canvasContext",
       "setCanvasContext",
-      "2d" as CanvasContext
+      CanvasContext.TwoD as CanvasContext.Type
     ),
     ...createState(
       "divBackgroundMinimized",
@@ -81,17 +48,17 @@ export const initRenderOptions = () => (
     ...createState(
       "divGradientMode",
       "setDivGradientMode",
-      "linear-horizontal" as DivGradientMode
+      DivGradientMode.LinearHorizontal as DivGradientMode.Type
     ),
     ...createState(
       "divGridMode",
       "setDivGridMode",
-      "vertical-horizontal" as DivGridMode
+      DivGridMode.VerticalHorizontal as DivGridMode.Type
     ),
     ...createState(
       "divFlexMode",
       "setDivFlexMode",
-      "vertical-horizontal" as DivFlexMode
+      DivFlexMode.VerticalHorizontal as DivFlexMode.Type
     ),
     ...createState(
       "divFlexOuterReversed",
@@ -109,39 +76,39 @@ export const initRenderOptions = () => (
       false as boolean
     ),
     ...createState(
-      "divInlineBlockWritingMode",
-      "setDivInlineBlockWritingMode",
-      "horizontal-tb" as DivInlineBlockWritingMode
+      "divFlowWritingMode",
+      "setDivFlowWritingMode",
+      "horizontal-tb" as DivFlowWritingMode.Type
     ),
     ...createState(
-      "divInlineBlockDirection",
-      "setDivInlineBlockDirection",
-      "ltr" as DivInlineBlockDirection
+      "divFlowDirection",
+      "setDivFlowDirection",
+      "ltr" as DivFlowDirection.Type
     ),
     ...createState(
       "divSublatticesDrawMode",
       "setDivSublatticesDrawMode",
-      "border" as DivSublatticesDrawMode
+      DivSublatticesDrawMode.Border as DivSublatticesDrawMode.Type
     ),
     ...createState(
       "divSublatticeRotateMode",
       "setDivSublatticeRotateMode",
-      "per-cells" as DivSublatticeRotateMode
+      DivSublatticesRotateMode.PerCells as DivSublatticesRotateMode.Type
     ),
     ...createState(
       "divSublatticeLayout",
       "setDivSublatticeLayout",
-      "layout1" as DivSublatticeLayout
+      DivSublatticesLayout.One as DivSublatticesLayout.Type
     ),
     ...createState(
       "divSublatticesAngle",
       "setDivSublatticesAngle",
-      "45deg" as DivSublatticesAngle
+      DivSublatticesAngle.deg45 as DivSublatticesAngle.Type
     ),
     ...createState(
       "svgPathDrawAs",
       "setSvgPathDrawAs",
-      "fill" as SvgPathDrawAs
+      SvgPathDrawAs.Fill as SvgPathDrawAs.Type
     ),
     ...createState(
       "svgPathMinimized",
@@ -156,7 +123,7 @@ export const initRenderOptions = () => (
     ...createState(
       "svgRectLineDrawAs",
       "setSvgRectLineDrawAs",
-      "rect-fill" as SvgRectLineDrawAs
+      SvgRectLineDrawAs.RectFill as SvgRectLineDrawAs.Type
     ),
     ...createState(
       "svgRectLineMinimized",
@@ -166,12 +133,12 @@ export const initRenderOptions = () => (
     ...createState(
       "svgGradientDrawAs",
       "setSvgGradientDrawAs",
-      "linear-horizontal" as SvgGradientDrawAs
+      SvgGradientDrawAs.HorizontalLineStroke as SvgGradientDrawAs.Type
     ),
     ...createState(
       "inputType",
       "setInputType",
-      "checkbox" as InputType
+      InputType.Checkbox as InputType.Type
     ),
     ...createState(
       "inputSize",

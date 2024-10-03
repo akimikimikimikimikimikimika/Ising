@@ -1,14 +1,15 @@
 import { FC } from "react";
+import { RendererOptionsFC } from "../utils/types";
 import { Chooser, Range } from "../interfaces/Menu/RowItem";
-import { RenderOptions } from "../renderer_utils/params";
+import { CanvasContext, DivGradientMode, DivGridMode, DivFlexMode, DivFlowWritingMode, DivFlowDirection, DivSublatticesDrawMode, DivSublatticesRotateMode, DivSublatticesLayout, DivSublatticesAngle, SvgPathDrawAs, SvgRectLineDrawAs, SvgGradientDrawAs, InputType } from "./types";
 
-export const CanvasMenu: FC<RenderOptions> = (props) => ( <>
+export const CanvasMenu: RendererOptionsFC = (props) => ( <>
   <Chooser
     name="Context"
     mode="segmented"
     options={[
-      { value: "2d", label: "2D" },
-      { value: "bitmaprenderer", label: "Bitmap Renderer" }
+      { value: CanvasContext.TwoD, label: "2D" },
+      { value: CanvasContext.Bitmap, label: "Bitmap Renderer" }
     ]}
     value={props.canvasContext}
     setValue={props.setCanvasContext}
@@ -16,7 +17,7 @@ export const CanvasMenu: FC<RenderOptions> = (props) => ( <>
   <AdaptDPR {...props} />
 </> );
 
-export const DivBackgroundMenu: FC<RenderOptions> = (props) => ( <>
+export const DivBackgroundMenu: RendererOptionsFC = (props) => ( <>
   <Minimize
     minimize={props.divBackgroundMinimized}
     setMinimize={props.setDivBackgroundMinimized}
@@ -25,28 +26,28 @@ export const DivBackgroundMenu: FC<RenderOptions> = (props) => ( <>
   <AdaptDPR {...props} />
 </> );
 
-export const DivClipPathPolygonMenu: FC<RenderOptions> = (props) => (
+export const DivClipPathPolygonMenu: RendererOptionsFC = (props) => (
   <Minimize
     minimize={props.divClipPathPolygonMinimized}
     setMinimize={props.setDivClipPathPolygonMinimized}
   />
 );
 
-export const DivShadowMenu: FC<RenderOptions> = (props) => (
+export const DivShadowMenu: RendererOptionsFC = (props) => (
   <Minimize
     minimize={props.divShadowMinimized}
     setMinimize={props.setDivShadowMinimized}
   />
 );
 
-export const DivGradientMenu: FC<RenderOptions> = (props) => ( <>
+export const DivGradientMenu: RendererOptionsFC = (props) => ( <>
   <Chooser
     name="Mode"
     mode="selector"
     options={[
-      { value: "linear-horizontal", label: "Linear Gradient Horizontal" },
-      { value: "linear-vertical", label: "Linear Gradient Vertical" },
-      { value: "conic", label: "Conic Gradient" }
+      { value: DivGradientMode.LinearHorizontal, label: "Linear Gradient Horizontal" },
+      { value: DivGradientMode.LinearVertical, label: "Linear Gradient Vertical" },
+      { value: DivGradientMode.Conic, label: "Conic Gradient" }
     ]}
     value={props.divGradientMode}
     setValue={props.setDivGradientMode}
@@ -55,27 +56,27 @@ export const DivGradientMenu: FC<RenderOptions> = (props) => ( <>
   <AdaptDPR {...props} />
 </> );
 
-export const DivGridMenu: FC<RenderOptions> = (props) => (
+export const DivGridMenu: RendererOptionsFC = (props) => (
   <Chooser
     name="Mode"
     mode="selector"
     options={[
-      { value: "vertical-horizontal", label: "Row Flow" },
-      { value: "horizontal-vertical", label: "Column Flow" },
-      { value: "minimized", label: "Draw One-side Cells Only" }
+      { value: DivGridMode.VerticalHorizontal, label: "Row Flow" },
+      { value: DivGridMode.HorizontalVertical, label: "Column Flow" },
+      { value: DivGridMode.Minimized, label: "Draw One-side Cells Only" }
     ]}
     value={props.divGridMode}
     setValue={props.setDivGridMode}
   />
 );
 
-export const DivFlexMenu: FC<RenderOptions> = (props) => ( <>
+export const DivFlexMenu: RendererOptionsFC = (props) => ( <>
   <Chooser
     name="Mode"
     mode="selector"
     options={[
-      { value: "vertical-horizontal", label: "Vertical → Horizontal" },
-      { value: "horizontal-vertical", label: "Horizontal → Vertical" }
+      { value: DivFlexMode.VerticalHorizontal, label: "Vertical → Horizontal" },
+      { value: DivFlexMode.HorizontalVertical, label: "Horizontal → Vertical" }
     ]}
     value={props.divFlexMode}
     setValue={props.setDivFlexMode}
@@ -102,7 +103,7 @@ export const DivFlexMenu: FC<RenderOptions> = (props) => ( <>
   />
 </> );
 
-export const DivAbsoluteMenu: FC<RenderOptions> = (props) => ( <>
+export const DivAbsoluteMenu: RendererOptionsFC = (props) => ( <>
   <Minimize
     minimize={props.divAbsoluteMinimized}
     setMinimize={props.setDivAbsoluteMinimized}
@@ -110,37 +111,37 @@ export const DivAbsoluteMenu: FC<RenderOptions> = (props) => ( <>
   <UseNthOfType {...props} />
 </> );
 
-export const DivFlowMenu: FC<RenderOptions> = (props) => ( <>
+export const DivFlowMenu: RendererOptionsFC = (props) => ( <>
   <Chooser
     name="Writing Mode"
     mode="selector"
     options={[
-      { value: "horizontal-tb", label: "Horizontal T→B" },
-      { value: "vertical-rl", label: "Vertical R→L" },
-      { value: "vertical-lr", label: "Vertical L→R" }
+      { value: DivFlowWritingMode.HorizontalTB, label: "Horizontal T→B" },
+      { value: DivFlowWritingMode.VerticalRL, label: "Vertical R→L" },
+      { value: DivFlowWritingMode.VerticalLR, label: "Vertical L→R" }
     ]}
-    value={props.divInlineBlockWritingMode}
-    setValue={props.setDivInlineBlockWritingMode}
+    value={props.divFlowWritingMode}
+    setValue={props.setDivFlowWritingMode}
   />
   <Chooser
     name="Direction"
     mode="segmented"
     options={[
-      { value: "ltr", label: "LTR" },
-      { value: "rtl", label: "RTL" }
+      { value: DivFlowDirection.LTR, label: "LTR" },
+      { value: DivFlowDirection.RTL, label: "RTL" }
     ]}
-    value={props.divInlineBlockDirection}
-    setValue={props.setDivInlineBlockDirection}
+    value={props.divFlowDirection}
+    setValue={props.setDivFlowDirection}
   />
 </> );
 
-export const DivSublatticesMenu: FC<RenderOptions> = (props) => ( <>
+export const DivSublatticesMenu: RendererOptionsFC = (props) => ( <>
   <Chooser
     name="Draw as"
     mode="selector"
     options={[
-      { value: "border", label: "Border" },
-      { value: "conic-gradient", label: "Conic Gradient" }
+      { value: DivSublatticesDrawMode.Border, label: "Border" },
+      { value: DivSublatticesDrawMode.ConicGradient, label: "Conic Gradient" }
     ]}
     value={props.divSublatticesDrawMode}
     setValue={props.setDivSublatticesDrawMode}
@@ -150,8 +151,8 @@ export const DivSublatticesMenu: FC<RenderOptions> = (props) => ( <>
     name="Layout"
     mode="segmented"
     options={[
-      { value: "layout1", label: "1" },
-      { value: "layout2", label: "2" }
+      { value: DivSublatticesLayout.One, label: "1" },
+      { value: DivSublatticesLayout.Two, label: "2" }
     ]}
     value={props.divSublatticeLayout}
     setValue={props.setDivSublatticeLayout}
@@ -160,10 +161,10 @@ export const DivSublatticesMenu: FC<RenderOptions> = (props) => ( <>
     name="Rotation angle"
     mode="segmented"
     options={[
-      { value: "45deg", label: "45°" },
-      { value: "135deg", label: "135°" },
-      { value: "225deg", label: "225°" },
-      { value: "315deg", label: "315°" }
+      { value: DivSublatticesAngle.deg45, label: "45°" },
+      { value: DivSublatticesAngle.deg135, label: "135°" },
+      { value: DivSublatticesAngle.deg225, label: "225°" },
+      { value: DivSublatticesAngle.deg315, label: "315°" }
     ]}
     value={props.divSublatticesAngle}
     setValue={props.setDivSublatticesAngle}
@@ -172,22 +173,22 @@ export const DivSublatticesMenu: FC<RenderOptions> = (props) => ( <>
     name="Rotate"
     mode="selector"
     options={[
-      { value: "per-cells", label: "per cells" },
-      { value: "whole-lattice", label: "whole lattice" }
+      { value: DivSublatticesRotateMode.PerCells, label: "per cells" },
+      { value: DivSublatticesRotateMode.WholeLattice, label: "whole lattice" }
     ]}
     value={props.divSublatticeRotateMode}
     setValue={props.setDivSublatticeRotateMode}
   />
 </> );
 
-export const SvgPathMenu: FC<RenderOptions> = (props) => ( <>
+export const SvgPathMenu: RendererOptionsFC = (props) => ( <>
   <Chooser
     name="Draw as"
     mode="selector"
     options={[
-      { value: "fill", label: "Fill rect" },
-      { value: "horizontal-stroke", label: "Stroke horizontal line" },
-      { value: "vertical-stroke", label: "Stroke vertical line" }
+      { value: SvgPathDrawAs.Fill, label: "Fill rect" },
+      { value: SvgPathDrawAs.HorizontalStroke, label: "Stroke horizontal line" },
+      { value: SvgPathDrawAs.VerticalStroke, label: "Stroke vertical line" }
     ]}
     value={props.svgPathDrawAs}
     setValue={props.setSvgPathDrawAs}
@@ -198,21 +199,21 @@ export const SvgPathMenu: FC<RenderOptions> = (props) => ( <>
   />
 </> );
 
-export const SvgPolygonMenu: FC<RenderOptions> = (props) => (
+export const SvgPolygonMenu: RendererOptionsFC = (props) => (
   <Minimize
     minimize={props.svgPolygonMinimized}
     setMinimize={props.setSvgPolygonMinimized}
   />
 );
 
-export const SvgRectLineMenu: FC<RenderOptions> = (props) => ( <>
+export const SvgRectLineMenu: RendererOptionsFC = (props) => ( <>
   <Chooser
     name="Draw as"
     mode="selector"
     options={[
-      { value: "rect-fill", label: "Rect (fill)" },
-      { value: "horizontal-line-stroke", label: "Horizontal Line (stroke)" },
-      { value: "vertical-line-stroke", label: "Vertical Line (stroke)" }
+      { value: SvgRectLineDrawAs.RectFill, label: "Rect (fill)" },
+      { value: SvgRectLineDrawAs.HorizontalLineStroke, label: "Horizontal Line (stroke)" },
+      { value: SvgRectLineDrawAs.VerticalLineStroke, label: "Vertical Line (stroke)" }
     ]}
     value={props.svgRectLineDrawAs}
     setValue={props.setSvgRectLineDrawAs}
@@ -224,13 +225,13 @@ export const SvgRectLineMenu: FC<RenderOptions> = (props) => ( <>
   <Overlap {...props} />
 </> );
 
-export const SvgGradientMenu: FC<RenderOptions> = (props) => ( <>
+export const SvgGradientMenu: RendererOptionsFC = (props) => ( <>
   <Chooser
     name="Draw as"
     mode="selector"
     options={[
-      { value: "linear-horizontal", label: "Horizontal Linear Gradient" },
-      { value: "linear-vertical", label: "Vertical Linear Gradient" }
+      { value: SvgGradientDrawAs.HorizontalLineStroke, label: "Horizontal Linear Gradient" },
+      { value: SvgGradientDrawAs.VerticalLineStroke, label: "Vertical Linear Gradient" }
     ]}
     value={props.svgGradientDrawAs}
     setValue={props.setSvgGradientDrawAs}
@@ -242,13 +243,13 @@ export const SvgGradientMenu: FC<RenderOptions> = (props) => ( <>
   />
 </> );
 
-export const InputMenu: FC<RenderOptions> = (props) => ( <>
+export const InputMenu: RendererOptionsFC = (props) => ( <>
   <Chooser
     name="Type"
     mode="selector"
     options={[
-      { value: "checkbox", label: "Checkbox" },
-      { value: "radio", label: "Radio Button" }
+      { value: InputType.Checkbox, label: "Checkbox" },
+      { value: InputType.Radio, label: "Radio Button" }
     ]}
     value={props.inputType}
     setValue={props.setInputType}

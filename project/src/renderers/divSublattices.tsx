@@ -1,42 +1,17 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-namespace */
-import { FC, memo, useMemo, CSSProperties } from "react";
+import { FC, memo, useMemo, useCallback, CSSProperties } from "react";
+import { Renderer, RendererFC, Bits, XY } from "../utils/types";
+import { indexToXY, cssSupports, minifyCss } from "../utils/utils";
+import {
+  DivSublatticesDrawMode   as DrawMode,
+  DivSublatticesRotateMode as RotateMode,
+  DivSublatticesLayout     as Layout,
+  DivSublatticesAngle      as Angle
+} from "../renderer_utils/types";
 import { DivSublatticesMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
-import { cssSupports, minifyCss } from "../utils/utils";
 
-namespace enumDefs {
-
-  export const DrawModeConsts = {
-    Border: "border",
-    ConicGradient: "conic-gradient",
-  } as const;
-  export type DrawMode = Literal<typeof DrawModeConsts>;
-
-  export const RotateModeConsts = {
-    PerCells: "per-cells",
-    WholeLattice: "whole-lattice",
-  } as const;
-  export type RotateMode = Literal<typeof RotateModeConsts>;
-
-  export const LayoutConsts = {
-    A: "layout1",
-    B: "layout2"
-  } as const;
-  export type Layout = Literal<typeof LayoutConsts>;
-
-  export const AngleConsts = {
-    A: "45deg", B: "135deg", C: "225deg", D: "315deg",
-  } as const;
-  export type Angle = Literal<typeof AngleConsts>;
-
-}
-export type DrawMode = enumDefs.DrawMode;
-export type RotateMode = enumDefs.RotateMode;
-export type Layout = enumDefs.Layout;
-export type Angle = enumDefs.Angle;
-
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <div className="view">
     <StaticStyle />
     <SizeLayoutDependentStyle
@@ -57,7 +32,20 @@ const View: FC<RendererDefs.RendererProps> = (props) => (
 
 namespace subComponents {
 
+  const corners: [string,string][] = [
+    ["rt", "right-top"],
+    ["rb", "right-bottom"],
+    ["lb", "left-bottom"],
+    ["lt", "left-top"],
+  ];
+
   export const StaticStyle: FC = memo(() => {
+    const cornersSrc = corners.map(([c1,c2]) => (
+      ["on", "off"].map(value => (
+        `.view > div > div.${c1}-${value} { --${c2}-color: var(--${value}-color); }`
+      ))
+    )).flat().join("");
+
     const src = minifyCss(`
       .view {
         container-type: size;
@@ -74,6 +62,7 @@ namespace subComponents {
         display: block;
         --radius: calc( 100cqmin / sqrt(2) / var(--side) );
       }
+      ${cornersSrc}
     `);
 
     return <style>{src}</style>;
@@ -81,7 +70,7 @@ namespace subComponents {
 
   type SizeLayoutDependentStyleProps = {
     side: number;
-    layout: Layout;
+    layout: Layout.Type;
     useNthOfType: boolean;
   };
 
@@ -99,85 +88,80 @@ namespace subComponents {
   });
 
   type DrawModeDependentStyleProps = {
-    drawMode: DrawMode;
+    drawMode: DrawMode.Type;
   };
 
   export const DrawModeDependentStyle: FC<DrawModeDependentStyleProps> = memo(({ drawMode }) => {
-
-    if ( drawMode === "border" ) {
-      const src = minifyCss(`
-        .view > div > div {
-          left: calc( var(--center-x) - var(--radius) );
-          top: calc( var(--center-y) - var(--radius) );
-          width: 0;
-          height: 0;
-          border-style: solid;
-          border-width: var(--radius);
-          border-top-color: var(--top-color);
-          border-bottom-color: var(--bottom-color);
-          border-left-color: var(--left-color);
-          border-right-color: var(--right-color);
-        }
-      `);
-
-      return <style>{src}</style>;
+    switch (drawMode) {
+      case DrawMode.Border: {
+        const src = minifyCss(`
+          .view > div > div {
+            left: calc( var(--center-x) - var(--radius) );
+            top: calc( var(--center-y) - var(--radius) );
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: var(--radius);
+            border-top-color: var(--top-color);
+            border-bottom-color: var(--bottom-color);
+            border-left-color: var(--left-color);
+            border-right-color: var(--right-color);
+          }
+        `);
+        return <style>{src}</style>;
+      }
+      case DrawMode.ConicGradient: {
+        const src = minifyCss(`
+          .view > div > div {
+            left: calc( var(--center-x) - var(--radius) );
+            top: calc( var(--center-y) - var(--radius) );
+            width: calc( 2 * var(--radius) );
+            height: calc( 2 * var(--radius) );
+            background-image: conic-gradient(from -45deg at 50% 50%, var(--top-color) 0deg 90deg, var(--right-color) 90deg 180deg, var(--bottom-color) 180deg 270deg, var(--left-color) 270deg 360deg);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+          }
+        `);
+        return <style>{src}</style>;
+      }
     }
-
-    if ( drawMode === "conic-gradient" ) {
-      const src = minifyCss(`
-        .view > div > div {
-          left: calc( var(--center-x) - var(--radius) );
-          top: calc( var(--center-y) - var(--radius) );
-          width: calc( 2 * var(--radius) );
-          height: calc( 2 * var(--radius) );
-          background-image: conic-gradient(from -45deg at 50% 50%, var(--top-color) 0deg 90deg, var(--right-color) 90deg 180deg, var(--bottom-color) 180deg 270deg, var(--left-color) 270deg 360deg);
-          background-size: 100% 100%;
-          background-repeat: no-repeat;
-        }
-      `);
-
-      return <style>{src}</style>;
-    }
-
   });
 
   type RotateModeDependentStyleProps = {
-    rotateMode: RotateMode;
+    rotateMode: RotateMode.Type;
   };
 
   export const RotateModeDependentStyle: FC<RotateModeDependentStyleProps> = memo(({ rotateMode }) => {
-
-    if ( rotateMode === "per-cells" ) {
-      const src = minifyCss(`
-        .view > div > div {
-          --center-x: calc( 100cqmin / var(--side) * var(--x) );
-          --center-y: calc( 100cqmin / var(--side) * var(--y) );
-          transform: rotate(var(--angle));
-          transform-origin: center center;
-        }
-      `);
-
-      return <style>{src}</style>;
-    }
-
-    if ( rotateMode === "whole-lattice" ) {
-      const src = minifyCss(`
-        .view > div {
-          transform: rotate(var(--angle));
-          transform-origin: 0 0;
-        }
-        .view > div > div {
-          --center-x: calc( 100cqmin / var(--side) / sqrt(2) * var(--s) );
-          --center-y: calc( 100cqmin / var(--side) / sqrt(2) * var(--t) );
-        }
-      `);
-
-      return <style>{src}</style>;
+    switch (rotateMode) {
+      case RotateMode.PerCells: {
+        const src = minifyCss(`
+          .view > div > div {
+            --center-x: calc( 100cqmin / var(--side) * var(--x) );
+            --center-y: calc( 100cqmin / var(--side) * var(--y) );
+            transform: rotate(var(--angle));
+            transform-origin: center center;
+          }
+        `);
+        return <style>{src}</style>;
+      }
+      case RotateMode.WholeLattice: {
+        const src = minifyCss(`
+          .view > div {
+            transform: rotate(var(--angle));
+            transform-origin: 0 0;
+          }
+          .view > div > div {
+            --center-x: calc( 100cqmin / var(--side) / sqrt(2) * var(--s) );
+            --center-y: calc( 100cqmin / var(--side) / sqrt(2) * var(--t) );
+          }
+        `);
+        return <style>{src}</style>;
+      }
     }
   });
 
   type AngleConversion = {
-    [key in Angle]: {
+    [key in Angle.Type]: {
       offset: number;
       transformMatrix: {
         sx: number, sy: number,
@@ -186,29 +170,28 @@ namespace subComponents {
     }
   };
   const angleConversion: AngleConversion = {
-    "45deg": {
+    [Angle.deg45]: {
       offset: 0,
       transformMatrix: { sx: +1, sy: +1, tx: -1, ty: +1 }
     },
-    "135deg": {
+    [Angle.deg135]: {
       offset: 1,
       transformMatrix: { sx: -1, sy: +1, tx: -1, ty: -1 }
     },
-    "225deg": {
+    [Angle.deg225]: {
       offset: 2,
       transformMatrix: { sx: -1, sy: -1, tx: +1, ty: -1 }
     },
-    "315deg": {
+    [Angle.deg315]: {
       offset: 3,
       transformMatrix: { sx: +1, sy: -1, tx: +1, ty: +1 }
     }
   };
 
-  const sideColors = [ "--top-color", "--right-color", "--bottom-color", "--left-color" ];
-  const corners = [ "--rt", "--rb", "--lb", "--lt" ];
+  const squareSides = [ "top", "right", "bottom", "left" ];
 
   type AngleDependentStyleProps = {
-    angle: Angle;
+    angle: Angle.Type;
   };
 
   export const AngleDependentStyle: FC<AngleDependentStyleProps> = memo(({ angle }) => {
@@ -216,10 +199,13 @@ namespace subComponents {
     const converter = angleConversion[angle];
 
     const colorProps =
-      sideColors.map((key,idx) => {
+      squareSides.map((side,idx) => {
         const offsetedIndex = ( idx + converter.offset ) % 4;
-        const value = corners[offsetedIndex];
-        return `${key}: var(${value});`;
+        const [,corner] = corners[offsetedIndex];
+
+        const key = `--${side}-color`;
+        const value = `var(--${corner}-color)`;
+        return `${key}: ${value};`;
       }).join("\n");
 
     const { sx, sy, tx, ty } = converter.transformMatrix;
@@ -241,7 +227,7 @@ namespace subComponents {
   type CellsProps = {
     side: number;
     bits: Bits;
-    layout: Layout;
+    layout: Layout.Type;
     useNthOfType: boolean;
   };
 
@@ -253,28 +239,44 @@ namespace subComponents {
       [side, layout]
     );
 
-    const getValue =
-      (coord: cellList.Coord) => {
+    const getClass = useCallback((cell: cellList.Cell) => {
+      const corners: [string, cellList.Coord][] = [
+        ["lt", cell.leftTop],
+        ["rt", cell.rightTop],
+        ["lb", cell.leftBottom],
+        ["rb", cell.rightBottom],
+      ];
+      return corners.map(([corner, coord]) => {
         const value = bits[ coord.x + coord.y * side ];
-        return value ? "var(--on-color)" : "var(--off-color)";
-      };
+        return `${corner}-${value ? "on" : "off"}`;
+      }).join(" ");
+    }, [side, bits]);
 
-    return <div>{cells.map((cell,idx) => {
-      const style = {
-        "--lt": getValue(cell.leftTop),
-        "--rt": getValue(cell.rightTop),
-        "--lb": getValue(cell.leftBottom),
-        "--rb": getValue(cell.rightBottom),
-        ...(
-          useNthOfType ? {} : {
-            "--x": cell.position.x,
-            "--y": cell.position.y
-          }
-        )
-      } as CSSProperties;
+    if (useNthOfType) {
+      return <div>{cells.map( (cell, idx) => (
+        <div
+          key={`${idx} useNthOfType`}
+          className={getClass(cell)}
+        />
+      ) )}</div>;
+    }
 
-      return <div key={idx} style={style} />;
-    })}</div>;
+    else {
+      return <div>{cells.map((cell, idx) => {
+        const style = {
+          "--x": cell.position.x,
+          "--y": cell.position.y
+        } as CSSProperties;
+
+        return (
+          <div
+            key={`${idx}`}
+            className={getClass(cell)}
+            style={style}
+          />
+        );
+      })}</div>;
+    }
 
   });
 
@@ -374,13 +376,13 @@ namespace nthRules {
     }).flat().join("");
   };
 
-  export const get = (side: number, layout: Layout): string => {
+  export const get = (side: number, layout: Layout.Type): string => {
     switch ( side % 2 ) {
       // even
       case 0: {
         const k = side / 2;
         switch (layout) {
-          case "layout1":
+          case Layout.One:
             return (
               createRules({
                 lengthX: k+1, lengthY: k+1,
@@ -394,7 +396,7 @@ namespace nthRules {
                 offsetIdx: (k+1)**2
               })
             );
-          case "layout2":
+          case Layout.Two:
             return (
               createRules({
                 lengthX: k+1, lengthY: k,
@@ -414,7 +416,7 @@ namespace nthRules {
       case 1: {
         const k = ( side + 1 ) / 2;
         switch (layout) {
-          case "layout1":
+          case Layout.One:
             return (
               createRules({
                 lengthX: k, lengthY: k,
@@ -428,7 +430,7 @@ namespace nthRules {
                 offsetIdx: k**2
               })
             );
-          case "layout2":
+          case Layout.Two:
             return (
               createRules({
                 lengthX: k, lengthY: k,
@@ -453,7 +455,7 @@ namespace nthRules {
 
 namespace cellList {
 
-  type Cell = {
+  export type Cell = {
     leftTop: Coord;
     rightTop: Coord;
     leftBottom: Coord;
@@ -462,7 +464,7 @@ namespace cellList {
   };
   export type Coord = { x: number, y: number };
 
-  export const get = (side: number, layout: Layout): Cell[] => {
+  export const get = (side: number, layout: Layout.Type): Cell[] => {
 
     const coord = (x: number, y: number): Coord => ({
       x: normalizeCoord(x, side),
@@ -474,11 +476,11 @@ namespace cellList {
       case 0: {
         const k = side / 2;
         switch (layout) {
-          case "layout1":
+          case Layout.One:
             return [
               ...perCell(
                 k+1, k+1,
-                (x,y) => ({
+                ({ x, y }) => ({
                   leftTop:     coord( 2*x - 1, 2*y - 1 ),
                   rightTop:    coord( 2*x    , 2*y - 1 ),
                   leftBottom:  coord( 2*x - 1, 2*y     ),
@@ -488,7 +490,7 @@ namespace cellList {
               ),
               ...perCell(
                 k, k,
-                (x,y) => ({
+                ({ x, y }) => ({
                   leftTop:     coord( 2*x    , 2*y     ),
                   rightTop:    coord( 2*x + 1, 2*y     ),
                   leftBottom:  coord( 2*x    , 2*y + 1 ),
@@ -497,11 +499,11 @@ namespace cellList {
                 })
               ),
             ];
-          case "layout2":
+          case Layout.Two:
             return [
               ...perCell(
                 k+1, k,
-                (x,y) => ({
+                ({ x, y }) => ({
                   leftTop:     coord( 2*x - 1, 2*y     ),
                   rightTop:    coord( 2*x    , 2*y     ),
                   leftBottom:  coord( 2*x - 1, 2*y + 1 ),
@@ -511,7 +513,7 @@ namespace cellList {
               ),
               ...perCell(
                 k, k+1,
-                (x,y) => ({
+                ({ x, y }) => ({
                   leftTop:     coord( 2*x    , 2*y - 1 ),
                   rightTop:    coord( 2*x + 1, 2*y - 1 ),
                   leftBottom:  coord( 2*x    , 2*y     ),
@@ -526,11 +528,11 @@ namespace cellList {
       case 1: {
         const k = ( side + 1 ) / 2;
         switch (layout) {
-          case "layout1":
+          case Layout.One:
             return [
               ...perCell(
                 k, k,
-                (x,y) => ({
+                ({ x, y }) => ({
                   leftTop:     coord( 2*x - 1, 2*y - 1 ),
                   rightTop:    coord( 2*x    , 2*y - 1 ),
                   leftBottom:  coord( 2*x - 1, 2*y     ),
@@ -540,7 +542,7 @@ namespace cellList {
               ),
               ...perCell(
                 k, k,
-                (x,y) => ({
+                ({ x, y }) => ({
                   leftTop:     coord( 2*x    , 2*y     ),
                   rightTop:    coord( 2*x + 1, 2*y     ),
                   leftBottom:  coord( 2*x    , 2*y + 1 ),
@@ -549,11 +551,11 @@ namespace cellList {
                 })
               )
             ];
-          case "layout2":
+          case Layout.Two:
             return [
               ...perCell(
                 k, k,
-                (x,y) => ({
+                ({ x, y }) => ({
                   leftTop:     coord( 2*x - 1, 2*y     ),
                   rightTop:    coord( 2*x    , 2*y     ),
                   leftBottom:  coord( 2*x - 1, 2*y + 1 ),
@@ -563,7 +565,7 @@ namespace cellList {
               ),
               ...perCell(
                 k, k,
-                (x,y) => ({
+                ({ x, y }) => ({
                   leftTop:     coord( 2*x    , 2*y - 1 ),
                   rightTop:    coord( 2*x + 1, 2*y - 1 ),
                   leftBottom:  coord( 2*x    , 2*y     ),
@@ -582,14 +584,14 @@ namespace cellList {
 
   const perCell = (
     lengthX: number, lengthY: number,
-    factory: (x: number, y: number) => Cell
+    factory: (xy: XY) => Cell
   ): Cell[] => (
     Array.from({ length: lengthX*lengthY })
-    .map((_,idx) => {
-      const x = idx % lengthX;
-      const y = Math.floor( idx / lengthX );
-      return factory(x, y);
-    })
+    .map(
+      (_,idx) => factory(
+        indexToXY(idx, lengthX)
+      )
+    )
   );
 
   const normalizeCoord = (coord: number, side: number) => (
@@ -598,7 +600,7 @@ namespace cellList {
 
 }
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV Sublattices",
   isActive: cssSupports(
     [ "container-type", "size" ],

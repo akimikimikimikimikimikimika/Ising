@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useState, useRef, useEffect } from "react";
-import { Bits, RendererDefs } from "../../utils/types";
+import { Bits, WH } from "../../utils/types";
 import { Parameters, Control, Info } from "../../utils/params";
 import { Calc, Runner } from "../../utils/utils";
 
@@ -44,7 +44,7 @@ export const controller = (props: ControllerProps) => {
   };
 
   // state variable of window size and update observer
-  const [windowSize, setWindowSize] = useState<RendererDefs.WH>({ width: 0, height: 0 });
+  const [windowSize, setWindowSize] = useState<WH>({ width: 0, height: 0 });
   useEffect(() => {
     const handleResize = () => {
       const bcr = document.documentElement.getBoundingClientRect();

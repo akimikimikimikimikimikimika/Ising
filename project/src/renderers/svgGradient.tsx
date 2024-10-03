@@ -1,16 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, ReactNode } from "react";
-import { SvgGradientMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
+import { Renderer, RendererFC, Bits } from "../utils/types";
 import { ArrayUtils, minifyCss } from "../utils/utils";
+import { SvgGradientDrawAs as DrawAs } from "../renderer_utils/types";
+import { SvgGradientMenu as Menu } from "../renderer_utils/MenuOptions";
 
-export const DrawAsConsts = {
-  HorizontalLineStroke: "linear-horizontal",
-  VerticalLineStroke: "linear-vertical",
-} as const;
-export type DrawAs = Literal<typeof DrawAsConsts>;
-
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <Root side={props.side}>
     <StaticStyle />
     <Cells
@@ -54,13 +49,13 @@ const StaticStyle: FC = memo(() => {
   return <style>{src}</style>;
 });
 
-const processors: { [key in DrawAs]: ArrayUtils.Process } = {
-  "linear-horizontal": ArrayUtils.processors.identity,
-  "linear-vertical": ArrayUtils.processors.transpose
+const processors: { [key in DrawAs.Type]: ArrayUtils.Process } = {
+  [DrawAs.HorizontalLineStroke]: ArrayUtils.processors.identity,
+  [DrawAs.VerticalLineStroke]: ArrayUtils.processors.transpose
 }
 
 type CellsProps = {
-  drawAs: DrawAs;
+  drawAs: DrawAs.Type;
   overlap: number;
   side: number;
   bits: Bits;
@@ -89,7 +84,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 });
 
 type LineProps = {
-  drawAs: DrawAs;
+  drawAs: DrawAs.Type;
   overlap: number;
   lineIdx: number;
   side: number;
@@ -124,7 +119,7 @@ const Line: FC<LineProps> = memo((props) => {
 
   switch (drawAs) {
 
-    case "linear-horizontal":
+    case DrawAs.HorizontalLineStroke:
       return ( <>
         <rect
           x={0} y={lineIdx}
@@ -137,7 +132,7 @@ const Line: FC<LineProps> = memo((props) => {
         >{stopNodes}</linearGradient>
       </> );
 
-    case "linear-vertical":
+    case DrawAs.VerticalLineStroke:
       return ( <>
         <rect
           x={lineIdx} y={0}
@@ -153,7 +148,7 @@ const Line: FC<LineProps> = memo((props) => {
   }
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "SVG Gradient Rect",
   isActive: Boolean(window.SVGSVGElement),
   view: View,

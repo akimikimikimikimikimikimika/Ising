@@ -1,17 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC, memo, CSSProperties } from "react";
-import { DivGridMenu as Menu } from "../renderer_utils/MenuOptions";
-import { Bits, RendererDefs } from "../utils/types";
+import { Renderer, RendererFC, Bits } from "../utils/types";
 import { ArrayUtils, cssSupports, minifyCss } from "../utils/utils";
+import { DivGridMode as Mode } from "../renderer_utils/types";
+import { DivGridMenu as Menu } from "../renderer_utils/MenuOptions";
 
-export const ModeConsts = {
-  VerticalHorizontal: "vertical-horizontal",
-  HorizontalVertical: "horizontal-vertical",
-  Minimized: "minimized",
-} as const;
-export type Mode = Literal<typeof ModeConsts>;
-
-const View: FC<RendererDefs.RendererProps> = (props) => (
+const View: RendererFC = (props) => (
   <div className="view">
     <StaticStyle />
     <ModeDependentStyle mode={props.divGridMode} />
@@ -36,13 +30,13 @@ const StaticStyle: FC = memo(() => {
 });
 
 type ModeDependentStyleProps = {
-  mode: Mode;
+  mode: Mode.Type;
 };
 
 const ModeDependentStyle: FC<ModeDependentStyleProps> = memo(({ mode }) => {
   const src = minifyCss((() => {
 
-    if ( mode === "minimized" ) return `
+    if ( mode === Mode.Minimized ) return `
       .view > div {
         grid-column: calc( var(--x) + 1 ) / calc( var(--x) + 2 );
         grid-row: calc( var(--y) + 1 ) / calc( var(--y) + 2 );
@@ -50,8 +44,8 @@ const ModeDependentStyle: FC<ModeDependentStyleProps> = memo(({ mode }) => {
     `;
 
     const flow =
-      mode === "vertical-horizontal" ? "row" :
-      mode === "horizontal-vertical" ? "column" :
+      mode === Mode.VerticalHorizontal ? "row" :
+      mode === Mode.HorizontalVertical ? "column" :
       "";
 
     return `
@@ -86,7 +80,7 @@ const SizeDependentStyle: FC<SizeDependentStyleProps> = memo(({ side }) => {
 });
 
 type CellsProps = {
-  mode: Mode;
+  mode: Mode.Type;
   side: number;
   bits: Bits;
 };
@@ -121,8 +115,8 @@ const Cells: FC<CellsProps> = memo((props) => {
 
   else {
     const bits =
-      props.mode === "vertical-horizontal" ? props.bits :
-      props.mode === "horizontal-vertical" ? ArrayUtils.transpose(props.bits) :
+      props.mode === Mode.VerticalHorizontal ? props.bits :
+      props.mode === Mode.HorizontalVertical ? ArrayUtils.transpose(props.bits) :
       [];
 
     return <>{bits.map((value,idx) => (
@@ -135,7 +129,7 @@ const Cells: FC<CellsProps> = memo((props) => {
 
 });
 
-export const renderer : RendererDefs.Renderer = {
+export const renderer: Renderer = {
   name: "DIV Grid",
   isActive: cssSupports(
     [ "display", "grid" ],
