@@ -32,12 +32,6 @@ const StaticStyle: FC = memo(() => {
       top: calc( 100% / var(--side) * var(--y) );
       bottom: calc( 100% / var(--side) * ( var(--side) - 1 - var(--y) ) );
     }
-    .view > .on {
-      background-color: var(--on-color);
-    }
-    .view > .off {
-      background-color: var(--off-color);
-    }
   `);
 
   return <style>{src}</style>;
@@ -108,7 +102,10 @@ const Cells: FC<CellsProps> = memo((props) => {
 
     if (useNthOfType) {
       return <>{props.bits.map((value,idx) => (
-        <div key={idx} className={value ? "on" : "off"} />
+        <div
+          key={`${idx} useNthOfType`}
+          className={value ? "on" : "off"}
+        />
       ))}</>;
     }
 
@@ -118,7 +115,7 @@ const Cells: FC<CellsProps> = memo((props) => {
         const style = { "--x": x, "--y": y } as CSSProperties;
         return (
           <div
-            key={idx}
+            key={`${idx}`}
             className={value ? "on" : "off"}
             style={style}
           />
@@ -156,7 +153,7 @@ const Cells: FC<CellsProps> = memo((props) => {
       return <>
         {style}
         {minors.map((_,idx) => (
-          <div key={idx} />
+          <div key={`${idx} minimized useNthOfType`} />
         ))}
       </>;
     }
@@ -173,7 +170,7 @@ const Cells: FC<CellsProps> = memo((props) => {
             "--y": position.y
           } as CSSProperties;
           return (
-            <div key={idx} style={style} />
+            <div key={`${idx} minimized`} style={style} />
           );
         })}
       </>;

@@ -63,7 +63,11 @@ export namespace Calc {
     }
 
     // get the array index from the given x, y coordinate
-    const flatten = (x: number, y: number) => x + y * side;
+    const flatten = (x: number, y: number) => {
+      const offsetX = ( x + side ) % side;
+      const offsetY = ( y + side ) % side;
+      return offsetX + offsetY * side;
+    };
 
     // set the next value of each bit
     // the bits are chosen with the given order list
@@ -97,9 +101,10 @@ export namespace Calc {
   };
 
   // diff coordinate for neighbor cells
-  const neighbors: Array<[number,number]> = [[-1,0],[+1,0],[0,-1],[0,+1]];
+  const neighbors: Array<[number, number]> = [[-1,0],[+1,0],[0,-1],[0,+1]];
 
   // temperature unit
+  // calculated from Kramers-Wannier duality
   const unitTemp = 2 / Math.log( 1 + Math.SQRT2 );
 
   // update bits and orders when the new pixel size is applied
@@ -113,14 +118,14 @@ export namespace Calc {
     const rng = params.rng;
 
     // when the pixel size is not changed
-    if (oldSide===newSide) return oldBits;
+    if (oldSide === newSide) return oldBits;
 
     const bits: Bits = [];
 
     // when the initial pixel size is zero
-    if (oldSide==0) {
+    if (oldSide == 0) {
       const size = newSide ** 2;
-      for (let idx=0;idx<size;idx++) {
+      for (let idx=0; idx<size; idx++) {
         bits.push( random(rng) >= 0.5 );
       }
       return bits;
@@ -128,9 +133,9 @@ export namespace Calc {
     else {
 
       // when the pixel size is increasing
-      if (oldSide<newSide) {
+      if (oldSide < newSide) {
         // using linear approximation of nearest neighbors
-        for (let y=0;y<newSide;y++) for (let x=0;x<newSide;x++) {
+        for (let y=0; y<newSide; y++) for (let x=0; x<newSide; x++) {
           // relative position in old lattice
           const x_rel = x * (oldSide-1) / (newSide-1);
           const y_rel = y * (oldSide-1) / (newSide-1);
@@ -164,12 +169,12 @@ export namespace Calc {
       }
 
       // when the pixel size is decreasing
-      if (oldSide>newSide) {
+      if (oldSide > newSide) {
 
         // first, for each cell in new lattice, make list of affecting cell in old lattice (in 1-dim)
         const affectingCells: number[][] = [];
-        for (let idx=0;idx<newSide;idx++) affectingCells.push([]);
-        for (let idx=0;idx<oldSide;idx++) {
+        for (let idx=0; idx<newSide; idx++) affectingCells.push([]);
+        for (let idx=0; idx<oldSide; idx++) {
           const ratio = idx * (newSide-1)/(oldSide-1);
           const f = Math.floor(ratio);
           const c = Math.ceil(ratio);
@@ -181,7 +186,7 @@ export namespace Calc {
         }
 
         // using linear approximation of nearest neighbors
-        for (let y=0;y<newSide;y++) for (let x=0;x<newSide;x++) {
+        for (let y=0; y<newSide; y++) for (let x=0; x<newSide; x++) {
           // get affecting cells for x,y axis, respectively
           const x_acl = affectingCells[x];
           const y_acl = affectingCells[y];
@@ -262,8 +267,7 @@ export namespace Runner {
     let lastDate: Nullable<number> = null;
     let frameCounter: number = 0;
 
-    const animationFrame = () => {
-      const date = performance.now();
+    const animationFrame = (date: DOMHighResTimeStamp) => {
 
       if (!isNil(lastDate)) {
         const duration = date - lastDate;
@@ -281,15 +285,13 @@ export namespace Runner {
         frameCounter = 0;
       }
 
-      intId = window.requestAnimationFrame(
-        () => animationFrame()
-      );
+      intId = window.requestAnimationFrame(animationFrame);
     };
 
     const runner: Runner = {
       action: null,
       play: () => {
-        if (isNil(intId)) animationFrame();
+        if (isNil(intId)) animationFrame(performance.now());
       },
       pause: () => {
         if (!isNil(intId)) {

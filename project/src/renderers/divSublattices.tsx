@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-namespace */
-import { FC, memo, useMemo, CSSProperties } from "react";
+import { FC, memo, useMemo, useCallback, CSSProperties } from "react";
 import { Renderer, RendererFC, Bits, XY } from "../utils/types";
 import { indexToXY, cssSupports, minifyCss } from "../utils/utils";
 import {
@@ -32,7 +32,20 @@ const View: RendererFC = (props) => (
 
 namespace subComponents {
 
+  const corners: [string,string][] = [
+    ["rt", "right-top"],
+    ["rb", "right-bottom"],
+    ["lb", "left-bottom"],
+    ["lt", "left-top"],
+  ];
+
   export const StaticStyle: FC = memo(() => {
+    const cornersSrc = corners.map(([c1,c2]) => (
+      ["on", "off"].map(value => (
+        `.view > div > div.${c1}-${value} { --${c2}-color: var(--${value}-color); }`
+      ))
+    )).flat().join("");
+
     const src = minifyCss(`
       .view {
         container-type: size;
@@ -49,6 +62,7 @@ namespace subComponents {
         display: block;
         --radius: calc( 100cqmin / sqrt(2) / var(--side) );
       }
+      ${cornersSrc}
     `);
 
     return <style>{src}</style>;
@@ -174,8 +188,7 @@ namespace subComponents {
     }
   };
 
-  const sideColors = [ "--top-color", "--right-color", "--bottom-color", "--left-color" ];
-  const corners = [ "--rt", "--rb", "--lb", "--lt" ];
+  const squareSides = [ "top", "right", "bottom", "left" ];
 
   type AngleDependentStyleProps = {
     angle: Angle.Type;
@@ -186,10 +199,13 @@ namespace subComponents {
     const converter = angleConversion[angle];
 
     const colorProps =
-      sideColors.map((key,idx) => {
+      squareSides.map((side,idx) => {
         const offsetedIndex = ( idx + converter.offset ) % 4;
-        const value = corners[offsetedIndex];
-        return `${key}: var(${value});`;
+        const [,corner] = corners[offsetedIndex];
+
+        const key = `--${side}-color`;
+        const value = `var(--${corner}-color)`;
+        return `${key}: ${value};`;
       }).join("\n");
 
     const { sx, sy, tx, ty } = converter.transformMatrix;
@@ -223,28 +239,44 @@ namespace subComponents {
       [side, layout]
     );
 
-    const getValue =
-      (coord: cellList.Coord) => {
+    const getClass = useCallback((cell: cellList.Cell) => {
+      const corners: [string, cellList.Coord][] = [
+        ["lt", cell.leftTop],
+        ["rt", cell.rightTop],
+        ["lb", cell.leftBottom],
+        ["rb", cell.rightBottom],
+      ];
+      return corners.map(([corner, coord]) => {
         const value = bits[ coord.x + coord.y * side ];
-        return value ? "var(--on-color)" : "var(--off-color)";
-      };
+        return `${corner}-${value ? "on" : "off"}`;
+      }).join(" ");
+    }, [side, bits]);
 
-    return <div>{cells.map((cell,idx) => {
-      const style = {
-        "--lt": getValue(cell.leftTop),
-        "--rt": getValue(cell.rightTop),
-        "--lb": getValue(cell.leftBottom),
-        "--rb": getValue(cell.rightBottom),
-        ...(
-          useNthOfType ? {} : {
-            "--x": cell.position.x,
-            "--y": cell.position.y
-          }
-        )
-      } as CSSProperties;
+    if (useNthOfType) {
+      return <div>{cells.map( (cell, idx) => (
+        <div
+          key={`${idx} useNthOfType`}
+          className={getClass(cell)}
+        />
+      ) )}</div>;
+    }
 
-      return <div key={idx} style={style} />;
-    })}</div>;
+    else {
+      return <div>{cells.map((cell, idx) => {
+        const style = {
+          "--x": cell.position.x,
+          "--y": cell.position.y
+        } as CSSProperties;
+
+        return (
+          <div
+            key={`${idx}`}
+            className={getClass(cell)}
+            style={style}
+          />
+        );
+      })}</div>;
+    }
 
   });
 
@@ -423,7 +455,7 @@ namespace nthRules {
 
 namespace cellList {
 
-  type Cell = {
+  export type Cell = {
     leftTop: Coord;
     rightTop: Coord;
     leftBottom: Coord;

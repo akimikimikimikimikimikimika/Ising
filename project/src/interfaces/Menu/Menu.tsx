@@ -34,6 +34,7 @@ export const Menu: FC<MenuProps> = (props) => (
     <Range
       name="pixels"
       min={2} max={150} step={1}
+      formatter={pixelsFormatter}
       value={props.pixels} setValue={props.setPixels}
     />
     <Caption title="Controls" />
@@ -94,6 +95,8 @@ const integerFormatter = (value: number) => {
   if (value < 0) return `-${-value}`;
   return `${value}`;
 };
+
+const pixelsFormatter = (value: number) => `${value} × ${value}`;
 
 const intervalFormatter = (value: number) => (
   value % 1e3 === 0 ? `${value/1e3}.00 sec` :
